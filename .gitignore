@@ -1,0 +1,5 @@
+/build/
+/build-before-move/
+*.exe
+*.obj
+*.o

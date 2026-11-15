@@ -1,0 +1,16 @@
+{
+  "cmake.generator": "Ninja",
+  "cmake.configureSettings": {
+    "CMAKE_CXX_COMPILER": "C:/Fortran/mingw64/bin/g++.exe",
+    "CMAKE_MAKE_PROGRAM": "C:/Fortran/mingw64/bin/ninja.exe",
+    "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+    "CMAKE_BUILD_TYPE": "Debug"
+  },
+  "cmake.environment": {
+    "TMP": "${env:SystemRoot}\\Temp",
+    "PATH": "C:\\Fortran\\mingw64\\bin;${env:PATH}",
+    "TEMP": "${env:SystemRoot}\\Temp"
+  },
+  "cmake.configureOnOpen": false,
+  "cmake.cmakePath": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe"
+}

@@ -1,0 +1,31 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "preLaunchTask": "CMake: build",
+      "cwd": "${workspaceFolder}",
+      "setupCommands": [
+        {
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true,
+          "description": "Enable pretty printing"
+        }
+      ],
+      "request": "launch",
+      "name": "NonlinearFEM (CMake Debug)",
+      "miDebuggerPath": "C:/Fortran/mingw64/bin/gdb.exe",
+      "stopAtEntry": false,
+      "MIMode": "gdb",
+      "program": "${workspaceFolder}/build/NonlinearFEM.exe",
+      "environment": [
+        {
+          "value": "C:\\Fortran\\mingw64\\bin;${env:PATH}",
+          "name": "PATH"
+        }
+      ],
+      "args": [],
+      "type": "cppdbg",
+      "externalConsole": false
+    }
+  ]
+}

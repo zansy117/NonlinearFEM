@@ -1,0 +1,56 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "args": [
+        "-S",
+        "${workspaceFolder}",
+        "-B",
+        "${workspaceFolder}/build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Debug",
+        "-DCMAKE_CXX_COMPILER=C:/Fortran/mingw64/bin/g++.exe",
+        "-DCMAKE_MAKE_PROGRAM=C:/Fortran/mingw64/bin/ninja.exe",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+      ],
+      "problemMatcher": [],
+      "type": "process",
+      "label": "CMake: configure",
+      "command": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe",
+      "options": {
+        "env": {
+          "PATH": "C:\\Fortran\\mingw64\\bin;${env:PATH}",
+          "TMP": "${env:SystemRoot}\\Temp",
+          "TEMP": "${env:SystemRoot}\\Temp"
+        },
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "CMake: build",
+      "type": "process",
+      "dependsOn": "CMake: configure",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "command": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe",
+      "group": {
+        "isDefault": true,
+        "kind": "build"
+      },
+      "args": [
+        "--build",
+        "${workspaceFolder}/build"
+      ],
+      "options": {
+        "env": {
+          "PATH": "C:\\Fortran\\mingw64\\bin;${env:PATH}",
+          "TMP": "${env:SystemRoot}\\Temp",
+          "TEMP": "${env:SystemRoot}\\Temp"
+        },
+        "cwd": "${workspaceFolder}"
+      }
+    }
+  ]
+}
