@@ -19,6 +19,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(NonlinearFEM
     src/main.cpp
+    src/ModelIO.cpp
+    src/Solver.cpp
+    src/BoundaryConditions.cpp
+    src/LoadStepping.cpp
     src/Kinematics2D.cpp
     src/Material.cpp
     src/ElementQ4.cpp
@@ -210,8 +214,21 @@ add_executable(test_cantilever_convergence
     src/Material.cpp
 )
 
+add_executable(test_model_io
+    tests/test_model_io.cpp
+    src/ModelIO.cpp
+    src/LoadStepping.cpp
+    src/Solver.cpp
+    src/Assembly.cpp
+    src/BoundaryConditions.cpp
+    src/ElementQ4.cpp
+    src/Kinematics2D.cpp
+    src/Material.cpp
+)
+
 set(NONLINEARFEM_TARGETS
     NonlinearFEM
+    test_model_io
     test_cantilever_convergence
     test_uniaxial_tension
     test_kinematics
@@ -268,7 +285,20 @@ endif()
 if(BUILD_TESTING)
     foreach(target IN LISTS NONLINEARFEM_TARGETS)
         if(target MATCHES "^test_")
-            add_test(NAME ${target} COMMAND ${target})
+            if(target STREQUAL "test_model_io")
+                add_test(NAME ${target} COMMAND ${target} "${CMAKE_CURRENT_SOURCE_DIR}/examples/tension.nfem")
+            else()
+                add_test(NAME ${target} COMMAND ${target})
+            endif()
         endif()
     endforeach()
+endif()
+
+# The local slider interface uses only Python's standard library.
+if(BUILD_TESTING)
+    find_package(Python3 COMPONENTS Interpreter QUIET)
+    if(Python3_Interpreter_FOUND)
+        add_test(NAME test_gui_model
+            COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_gui_model.py" "$<TARGET_FILE:NonlinearFEM>")
+    endif()
 endif()

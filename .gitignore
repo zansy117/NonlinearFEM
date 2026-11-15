@@ -3,3 +3,6 @@
 *.exe
 *.obj
 *.o
+/results/
+__pycache__/
+*.pyc

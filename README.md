@@ -1,6 +1,6 @@
 # NonlinearFEM
 
-使用 C++17 实现的二维 Q4 几何非线性有限元研究项目。当前重点是求解流程和数值验证，算例的网格、载荷及边界条件在测试代码中定义。
+使用 C++17 实现的二维 Q4 几何非线性有限元研究项目。提供滑块建模界面、文本模型输入、非线性求解和位移结果查看，当前重点是小规模算例和数值验证。
 
 ## 当前功能
 
@@ -54,10 +54,11 @@ ctest --test-dir build -R "^test_solver_2x2$" --output-on-failure
 ctest --test-dir build -N
 ```
 
-目前注册了 19 个测试程序：
+目前有 20 个 C++ 测试程序；检测到 Python 3 时另外注册 `test_gui_model`，共 21 项：
 
 | 范围 | 测试程序 |
 | --- | --- |
+| 模型输入与导出 | `test_model_io` |
 | 运动学、应变、材料 | `test_kinematics`、`test_Gstrain`、`test_material` |
 | Q4、组装、边界条件 | `test_q4`、`test_assembly`、`test_boundary` |
 | Newton 求解 | `test_solver`、`test_solver_2x2` |
@@ -89,8 +90,8 @@ CMakeLists.txt        构建和 CTest 配置
 
 ## 当前限制
 
-- 主程序 `NonlinearFEM` 目前只输出初始化信息；实际求解示例位于 `tests/`。
-- 网格、材料和载荷需要在代码中设置，尚未提供通用的模型输入和结果可视化流程。
+- 主程序支持 `.nfem` 文件；矩形板可以使用 `LaunchGUI.cmd` 滑块界面建模。
+- GUI 当前支持矩形板的拉伸和悬臂两种边界模板；任意 Q4 网格需要编辑 `.nfem` 文件。尚无任意几何网格生成或应力恢复/应力云图。
 - 当前使用稠密全局刚度矩阵和高斯消元，主要面向小规模验证算例。
 - 当前材料实现不包含塑性或损伤等历史相关行为。
 - 求解器失败路径的专门回归验证、更多独立参考算例及网格收敛研究仍待完善。
@@ -147,3 +148,57 @@ delta = F L^3 / (3 E I) + F L / ((5/6) G t H)
 ```powershell
 ctest --test-dir build -R "^test_cantilever_convergence$" -V
 ```
+## 滑块建模界面（Windows）
+
+先按上面的步骤编译 C++ 项目。界面还需要 Python 3（包含 tkinter；不需要额外的 pip 包）。在项目根目录双击 `LaunchGUI.cmd` 即可启动，也可以运行：
+
+```powershell
+python gui/app.py
+```
+
+1. 选择悬臂板或拉伸板模板。切换模板会恢复对应的示例参数。
+2. 拖动滑块设置长度、高度、两个方向的单元数、参考厚度、杨氏模量、泊松比和右端总力。数值框可以精确输入，回车后同步滑块；超出滑块范围的有效数值仍以数值框为准。杨氏模量滑块采用对数刻度。
+3. 查看实时原始网格预览：蓝点代表约束节点，橙箭头代表载荷方向。悬臂板右边界为竖向力，正值向上；拉伸板为水平力，正值向右。载荷按参考边界长度分配，总力不是每个节点的力。
+4. 点击“运行计算”。计算在独立进程中运行，不会阻塞界面；可以点击“停止”。
+5. 成功后直接在窗口内查看变形和位移，切换位移分量或拖动变形放大滑块。原始网格使用灰色虚线，颜色代表各单元节点位移的平均值，不代表应力。
+6. “导出模型”保存 `.nfem` 输入；“打开完整结果页面与下载数据”打开本次结果页。
+
+每次计算自动建立 `results/时间戳/`，其中 `model.nfem` 是当次输入，`solution/` 包含 `results.html`、`nodes.csv` 和 `history.csv`。输入与结果一起保存，便于复现。结果目录已加入 Git 忽略规则。
+
+GUI 当前限制为 600 节点，以控制稠密求解器的计算成本。极端参数仍可能不收敛；失败时不显示未完成结果。计算期间修改输入，已完成结果仍属于旧参数，界面会提醒重新计算。窗口不会绘制应力或加载过程动画。
+
+## 文本模型输入与结果导出
+
+也可以不启动界面，直接执行示例：
+
+```powershell
+.\build\NonlinearFEM.exe examples/tension.nfem build/tension_output
+.\build\NonlinearFEM.exe examples/cantilever.nfem build/cantilever_output
+```
+
+多配置生成器使用对应的 `build/Debug/NonlinearFEM.exe` 或 `build/Release/NonlinearFEM.exe`。输出目录必须不存在，程序不会覆盖已有计算。
+
+`.nfem` 是严格的逐行文本格式，支持 `#` 注释。文件以 `NFEM 1` 开头，以 `end` 结束；节点和单元不额外填写 ID，按记录出现顺序从 0 编号。所有单位必须一致。
+
+| 段落 | 格式与说明 |
+| --- | --- |
+| 材料 | `material E nu`，当前平面应力弹性模型 |
+| 厚度 | `thickness t`，正数 |
+| 节点 | `nodes N`，后跟 N 行 `x y` |
+| 单元 | `elements M`，后跟 M 行 `n0 n1 n2 n3`，节点按逆时针顺序排列 |
+| 外载 | `loads K`，后跟 K 行 `node direction value`，重复节点力累加 |
+| 位移约束 | `constraints C`，后跟 C 行 `node direction value`，同一自由度不可重复约束 |
+| Newton（可选） | `newton maxIterations residualTolerance displacementTolerance` |
+| 加载（可选） | `stepping initialIncrement minimumIncrement maximumIncrement cutbackFactor growthFactor maxRetries maxLoadSteps` |
+
+`direction` 为 0（x）或 1（y）。载荷和非零位移约束均按加载系数从 0 比例增加到 1；初始位移为零。此版本支持单一材料、统一厚度、节点死载荷和 Q4 网格，不支持多材料、接触或随动力。
+
+程序检查模型尺寸、节点编号、重复约束、有限数值和初始网格合法性。文本输入最多 2000 节点，但稠密求解器在该规模可能很慢，建议先使用小网格。
+
+成功计算输出：
+
+- `nodes.csv`：参考坐标、位移、位移大小、变形坐标和约束自由度反力。自由自由度反力列填 0，不作为残差输出。
+- `history.csv`：已接受加载步的系数、增量、Newton 迭代次数、缩步重试次数和相对残差，不包含逐步位移。
+- `results.html`：不依赖网络的最终位移结果页面，可切换分量、调整显示放大倍数并下载 CSV。
+
+`test_model_io` 验证文件输入后解析拉伸解、错误输入拒绝、CSV 位移和反力、输出目录保护。`test_gui_model` 验证模板网格/约束/总力及生成文件经真实 C++ 求解器计算后的拉伸解析解和悬臂板参考位移。
