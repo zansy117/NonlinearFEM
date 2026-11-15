@@ -54,13 +54,14 @@ ctest --test-dir build -R "^test_solver_2x2$" --output-on-failure
 ctest --test-dir build -N
 ```
 
-目前注册了 18 个测试程序：
+目前注册了 19 个测试程序：
 
 | 范围 | 测试程序 |
 | --- | --- |
 | 运动学、应变、材料 | `test_kinematics`、`test_Gstrain`、`test_material` |
 | Q4、组装、边界条件 | `test_q4`、`test_assembly`、`test_boundary` |
 | Newton 求解 | `test_solver`、`test_solver_2x2` |
+| 悬臂板网格加密验证 | `test_cantilever_convergence` |
 | 大变形拉伸解析验证 | `test_uniaxial_tension` |
 | 切线刚度验证 | `test_tangent_stiffness`、`test_tangent_stiffness_distorted` |
 | 载荷步进 | `test_load_stepping`、`test_load_stepping_cutback`、`test_load_stepping_displacement` |
@@ -114,3 +115,35 @@ ctest --test-dir build -R "^test_uniaxial_tension$" -V
 ```
 
 这是当前材料模型的解析一致性验证，不是实际材料在 50% 伸长下的物理准确性证明，也不是网格收敛研究。
+## 悬臂板网格加密验证
+
+`test_cantilever_convergence` 使用长 4、高 1、厚 0.2 的平面应力矩形板，杨氏模量 1e5，泊松比 0.3。左端两个位移分量固定；右端沿参考边界施加均匀、方向固定的向下分布力，端点节点分配半权重。所有数值需采用一致单位。
+
+测试采用 4×1、8×2、16×4、24×6 四组网格，总向下力取 0.1、12.5、25、37.5、50。每个目标载荷从零状态开始进行分步加载，默认以目标载荷的 25% 为初始步长，允许自适应缩步。输出参考右边界中点的水平及竖向位移；若该点不是网格节点，使用相邻边界节点插值。
+
+每个算例检查完成全部加载、有限位移、约束误差、自由自由度残差和 X/Y 整体反力平衡。每组网格检查位移随载荷单调增加；每个载荷点检查最后一次网格加密的相对位移变化小于前一次且低于 5%。不同加密比下的变化量用于趋势检查，不用于宣称收敛阶。
+
+小载荷采用 Timoshenko 梁端部位移近似作为参考：
+
+```text
+I = t H^3 / 12
+G = E / (2 (1 + nu))
+delta = F L^3 / (3 E I) + F L / ((5/6) G t H)
+```
+
+该比较允许 10% 的差异，因为二维连续体的端部约束和载荷分布与一维梁近似并不完全相同。大变形阶段不使用线性梁理论作为准确解。
+
+首次验证的最大载荷结果（向下位移绝对值）：
+
+| 网格 | 端部中点位移 |
+| --- | ---: |
+| 4×1 | 0.44567924 |
+| 8×2 | 0.57922941 |
+| 16×4 | 0.63102510 |
+| 24×6 | 0.64214823 |
+
+最后两组网格在最大载荷下相差约 1.73%；小载荷下最细网格位移为 0.00131429，梁近似为 0.00134240，相差约 2.09%。这些结果支持网格稳定趋势，不构成大变形情况下的独立准确性证明。仍需更细网格或独立求解器对照来量化剩余误差。
+
+```powershell
+ctest --test-dir build -R "^test_cantilever_convergence$" -V
+```

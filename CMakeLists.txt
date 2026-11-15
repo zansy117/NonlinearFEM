@@ -199,8 +199,20 @@ add_executable(test_uniaxial_tension
     src/Material.cpp
 )
 
+add_executable(test_cantilever_convergence
+    tests/test_cantilever_convergence.cpp
+    src/LoadStepping.cpp
+    src/Solver.cpp
+    src/Assembly.cpp
+    src/BoundaryConditions.cpp
+    src/ElementQ4.cpp
+    src/Kinematics2D.cpp
+    src/Material.cpp
+)
+
 set(NONLINEARFEM_TARGETS
     NonlinearFEM
+    test_cantilever_convergence
     test_uniaxial_tension
     test_kinematics
     test_Gstrain
