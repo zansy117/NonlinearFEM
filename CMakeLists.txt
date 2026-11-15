@@ -1,7 +1,7 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-project(NonlinearFEM LANGUAGES CXX)
+project(NonlinearFEM VERSION 0.1.0 LANGUAGES CXX)
 
 include(CTest)
 

@@ -6,3 +6,8 @@
 /results/
 __pycache__/
 *.pyc
+
+/build-release/
+/build-package/
+/dist/
+/.venv/

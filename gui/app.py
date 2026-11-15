@@ -13,13 +13,14 @@ import webbrowser
 
 from model import PRESETS, TEMPLATES, DESCRIPTIONS, geometry, model_text
 
-ROOT = Path(__file__).resolve().parents[1]
+from runtime import application_root, VERSION
+ROOT = application_root()
 
 
 class App:
     def __init__(self, window):
         self.window = window
-        self.window.title("NonlinearFEM · 矩形板建模与计算")
+        self.window.title(f"NonlinearFEM v{VERSION} · 矩形板建模与计算")
         self.window.geometry("1250x820")
         self.window.minsize(1060, 760)
         self.process = None
@@ -398,6 +399,9 @@ class App:
 
 
 if __name__ == "__main__":
+    if len(sys.argv)==3 and sys.argv[1]=="--self-test":
+        from package_smoke import check
+        sys.exit(check(sys.argv[2]))
     root = tk.Tk()
     App(root)
     root.mainloop()

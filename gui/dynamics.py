@@ -9,7 +9,8 @@ import tempfile
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-ROOT = Path(__file__).resolve().parents[1]
+from runtime import application_root, VERSION
+ROOT = application_root()
 
 
 def load_results(directory):

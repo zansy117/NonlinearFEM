@@ -315,3 +315,25 @@ initial_mode bending
 ## 许可证
 
 本项目采用 [MIT License](LICENSE)，版权署名为 zansy117。允许使用、修改、分发和商用，包括闭源复用，但须按许可证要求保留版权及许可声明。软件按现状提供，不作保证。
+
+## 下载 Windows 便携版
+
+首个预发布版为 **v0.1.0**，面向 Windows 10/11 x64。在 [GitHub Releases](https://github.com/zansy117/NonlinearFEM/releases/tag/v0.1.0) 下载 `NonlinearFEM-v0.1.0-windows-x64.zip`，完整解压到可写目录后，双击 `NonlinearFEM-Workbench.exe`。不需要另行安装 Python 或 C++ 编译工具。请保留 `_internal/` 和 `build/` 文件夹。
+
+见 [快速入门](QUICKSTART.md)、[版本说明](RELEASE_NOTES.md) 和 [第三方许可](THIRD_PARTY_NOTICES.md)。这是未代码签名的学习研究预发布版，不是工程适用性认证。发行包附 SHA-256 校验文件；尚未在干净 Windows 虚拟机上验证。
+
+### 从源码打包（Windows）
+
+先构建并测试 Release 版本。GNU/MinGW 工具链可静态链接其运行库：
+
+```powershell
+cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release "-DCMAKE_EXE_LINKER_FLAGS=-static -static-libgcc -static-libstdc++"
+cmake --build build-release
+ctest --test-dir build-release --output-on-failure
+python -m pip install -r packaging/requirements.txt
+python tools/package_windows.py --solver-build build-release
+```
+
+以上命令要求 CMake、Ninja 和 GNU C++ 编译器已配置。其他工具链需要调整配置；脚本不会自动下载编译器。打包脚本生成 `dist/NonlinearFEM-v0.1.0-windows-x64/`，拒绝覆盖同名输出目录。它复制当前 Python 的运行环境，因此应使用包含 tkinter 的 Windows x64 Python。使用其他 Python 版本打包时，应复核并更新对应运行环境的第三方许可。
+
+发行验证包括 Release 的 31 项测试，以及实际便携 EXE 在独立目录、移除开发工具 PATH 后的界面初始化、静力/动力求解与结果窗口加载检查。该验证不能代替干净系统兼容性测试。
