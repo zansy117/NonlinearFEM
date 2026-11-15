@@ -54,13 +54,14 @@ ctest --test-dir build -R "^test_solver_2x2$" --output-on-failure
 ctest --test-dir build -N
 ```
 
-目前注册了 17 个测试程序：
+目前注册了 18 个测试程序：
 
 | 范围 | 测试程序 |
 | --- | --- |
 | 运动学、应变、材料 | `test_kinematics`、`test_Gstrain`、`test_material` |
 | Q4、组装、边界条件 | `test_q4`、`test_assembly`、`test_boundary` |
 | Newton 求解 | `test_solver`、`test_solver_2x2` |
+| 大变形拉伸解析验证 | `test_uniaxial_tension` |
 | 切线刚度验证 | `test_tangent_stiffness`、`test_tangent_stiffness_distorted` |
 | 载荷步进 | `test_load_stepping`、`test_load_stepping_cutback`、`test_load_stepping_displacement` |
 | Patch test | `test_q4_patch_multi`、`test_q4_patch_stress`、`test_q4_patch_distorted` |
@@ -92,3 +93,24 @@ CMakeLists.txt        构建和 CTest 配置
 - 当前使用稠密全局刚度矩阵和高斯消元，主要面向小规模验证算例。
 - 当前材料实现不包含塑性或损伤等历史相关行为。
 - 求解器失败路径的专门回归验证、更多独立参考算例及网格收敛研究仍待完善。
+## 大变形均匀拉伸验证
+
+`test_uniaxial_tension` 使用单位正方形的 2×2 Q4 网格，厚度为 0.2，杨氏模量为 2.1e5，泊松比为 0.3。左边界限制水平位移，左下角限制竖向位移；右边界施加按参考边长分配的水平节点力，上下边界自由。
+
+对于当前材料模型，令轴向伸长比为 λ，横向无应力条件给出：
+
+- 轴向 Green–Lagrange 应变：Exx = (λ² − 1)/2。
+- 横向应变：Eyy = −ν Exx。
+- 横向伸长比：λy = sqrt(1 − ν(λ² − 1))。
+- 第二 PK 轴向应力：Sxx = Young × Exx。
+- 名义轴向应力：Pxx = λ Sxx。
+- 总载荷：Force = Pxx × 参考高度 × 参考厚度。
+- 解析位移：ux = (λ − 1)X，uy = (λy − 1)Y。
+
+测试由解析关系生成 10 个目标载荷（λ 从 1.05 到 1.50），逐点进行力控制 Newton 求解，并以前一点的数值解作为初值。解析位移只用于比较，不作为求解器的位移边界条件。每点检查所有节点的位移、自由度平衡、整体反力平衡和端部位移单调性，并输出载荷—位移数据。
+
+```powershell
+ctest --test-dir build -R "^test_uniaxial_tension$" -V
+```
+
+这是当前材料模型的解析一致性验证，不是实际材料在 50% 伸长下的物理准确性证明，也不是网格收敛研究。

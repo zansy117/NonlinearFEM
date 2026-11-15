@@ -189,8 +189,19 @@ add_executable(test_global_assembly_verification
     src/Assembly.cpp
 )
 
+add_executable(test_uniaxial_tension
+    tests/test_uniaxial_tension.cpp
+    src/Solver.cpp
+    src/Assembly.cpp
+    src/BoundaryConditions.cpp
+    src/ElementQ4.cpp
+    src/Kinematics2D.cpp
+    src/Material.cpp
+)
+
 set(NONLINEARFEM_TARGETS
     NonlinearFEM
+    test_uniaxial_tension
     test_kinematics
     test_Gstrain
     test_material
