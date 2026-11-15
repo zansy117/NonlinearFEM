@@ -262,4 +262,35 @@ namespace NonlinearFEM {
         }
         return K;
     }
+
+    Q4LumpedMass computeQ4LumpedMass (
+        const Q4NodalValues& referenceCoordinates,
+        double referenceDensity,
+        double thickness
+    ) {
+        Q4LumpedMass mass{};
+
+        constexpr double gauss = 0.57735026918962576451;
+
+        const std::array<double , 2> gausspoints = {-gauss,gauss};
+
+        for(std::size_t i = 0;i < 2;++i) {
+            for(std::size_t j=0;j < 2;++j) {
+                const double xi =gausspoints[i] ,eta = gausspoints[j];
+
+                const Q4ShapeFunctions shape = computeQ4Shapefunctions(xi , eta);
+
+                const JacobianData jacobian = computeQ4Jacobian(referenceCoordinates , shape);
+
+                double m = referenceDensity * jacobian.detJ * thickness;
+
+                for(std::size_t k = 0;k < kQ4NodeCount;++k) {
+                    mass[2 * k] += m * shape.N[k];
+                    mass[2 * k + 1] += m * shape.N[k];
+                }
+
+            }
+        } 
+        return mass;
+    }
 }

@@ -33,4 +33,12 @@ namespace NonlinearFEM {
         double thickness = 1.0
     );
     
+    using Q4LumpedMass = std::array<double, kQ4DofCount>;
+
+    [[nodiscard]] 
+    Q4LumpedMass computeQ4LumpedMass (
+        const Q4NodalValues& referenceCoordinates,
+        double referenceDensity, //参考密度
+        double thickness = 1.0
+    );
 }

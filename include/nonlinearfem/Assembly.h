@@ -34,5 +34,22 @@ namespace NonlinearFEM {
         const MaterialParameters& material,
         double thickness = 1.0
     );
+
+    [[nodiscard]]
+    GlobalInternalForce assembleInternalForce (
+        const Q4Mesh& mesh,
+        const GlobalDisplacement& displacement,
+        const MaterialParameters& material,
+        double thickness = 1.0
+    );
     
+    using GlobalLumpedMass = std::vector<double>;
+
+    [[nodiscard]]
+    GlobalLumpedMass assembleGlobalLumpedMass (
+        const Q4Mesh& mesh,
+        double referenceDensity,
+        double thickness = 1.0
+    );
+
 }

@@ -226,8 +226,23 @@ add_executable(test_model_io
     src/Material.cpp
 )
 
+add_executable(test_lumped_mass
+    tests/test_lumped_mass.cpp
+    src/Assembly.cpp
+    src/ElementQ4.cpp
+    src/Kinematics2D.cpp
+    src/Material.cpp
+)
+
+add_executable(test_explicit_dynamics
+    tests/test_explicit_dynamics.cpp
+    src/ExplicitDynamics.cpp
+)
+
 set(NONLINEARFEM_TARGETS
     NonlinearFEM
+    test_explicit_dynamics
+    test_lumped_mass
     test_model_io
     test_cantilever_convergence
     test_uniaxial_tension
