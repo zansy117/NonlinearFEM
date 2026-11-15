@@ -11,7 +11,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import webbrowser
 
-from model import PRESETS, geometry, model_text
+from model import PRESETS, TEMPLATES, DESCRIPTIONS, geometry, model_text
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -37,6 +37,14 @@ class App:
         container.pack(fill="both", expand=True)
         ttk.Label(container, text="NonlinearFEM / 模型工作台", style="Title.TLabel").pack(anchor="w")
         ttk.Label(container, text="拖动滑块建模 → 运行计算 → 查看位移与变形   ·   请采用一致单位").pack(anchor="w", pady=(5, 15))
+        analysis_row = ttk.Frame(container)
+        analysis_row.pack(fill="x", pady=(0, 10))
+        ttk.Label(analysis_row, text="分析类型  ").pack(side="left")
+        self.analysis = tk.StringVar(value="静力分析")
+        analysis = ttk.Combobox(analysis_row, textvariable=self.analysis, state="readonly", width=28,
+            values=("静力分析", "动力：自由振动", "动力：渐增加载", "动力：突加载荷"))
+        analysis.pack(side="left")
+        analysis.bind("<<ComboboxSelected>>", self.analysis_changed)
         body = ttk.Frame(container)
         body.pack(fill="both", expand=True)
         left = ttk.Frame(body, width=400)
@@ -46,7 +54,7 @@ class App:
         ttk.Label(left, text="模型与边界条件").pack(anchor="w")
         self.mode = tk.StringVar(value="悬臂板：左端固定，右端竖向力")
         mode = ttk.Combobox(left, textvariable=self.mode, state="readonly", width=38,
-            values=("悬臂板：左端固定，右端竖向力", "拉伸板：左边水平约束，右端水平力"))
+            values=tuple(TEMPLATES.values()))
         mode.pack(fill="x", pady=(5, 9))
         mode.bind("<<ComboboxSelected>>", lambda _: self.preset())
         self.add_slider(left, "length", "长度 L", .1, 10)
@@ -56,8 +64,9 @@ class App:
         self.add_slider(left, "thickness", "参考厚度 t", .01, 2)
         self.add_slider(left, "young", "杨氏模量 E（滑块按对数变化）", 3, 11.5, logarithmic=True)
         self.add_slider(left, "poisson", "泊松比 ν", -.9, .49)
-        self.add_slider(left, "force", "右端总力（正值沿坐标正方向）", -200, 200)
-        ttk.Label(left, text="节点力按边界长度分配，不是每个节点同样大小。\n拉伸板允许竖向收缩；悬臂板左端两个方向固定。",
+        self.add_slider(left, "force", "加载边界总力（有正负方向）", -200, 200)
+        self.boundary_note = tk.StringVar()
+        ttk.Label(left, textvariable=self.boundary_note,
                   wraplength=390).pack(anchor="w", pady=(8, 12))
         buttons = ttk.Frame(left)
         buttons.pack(fill="x")
@@ -71,8 +80,23 @@ class App:
         self.progress.pack(fill="x")
         self.status = tk.StringVar()
         ttk.Label(left, textvariable=self.status, wraplength=390).pack(anchor="w", pady=10)
+        self.dynamic_box = ttk.LabelFrame(right, text="动力参数（固定时间步，无阻尼）", padding=8)
+        self.dynamic_vars = {}
+        for i, (key, label, value) in enumerate((
+            ("density", "参考密度", "1000"), ("time_step", "时间步（0=自动）", "0"),
+            ("duration", "计算时长", "1"), ("output_every", "每几步保存", "10"),
+            ("initial_amplitude", "初始扰动幅值", "0.001"),
+            ("observation_node", "观察节点（auto）", "auto"))):
+            var = tk.StringVar(value=value)
+            self.dynamic_vars[key] = var
+            ttk.Label(self.dynamic_box, text=label).grid(row=(i//3)*2, column=i%3, sticky="w", padx=8)
+            ttk.Entry(self.dynamic_box, textvariable=var, width=19).grid(row=(i//3)*2+1, column=i%3, sticky="ew", padx=8, pady=3)
+            var.trace_add("write", lambda *_: self.changed())
+        ttk.Label(self.dynamic_box, text="自由振动忽略外力；加载模式使用左侧总力。初始扰动可设为 0。自动步长只依据初始刚度。",
+                  wraplength=650).grid(row=4,column=0,columnspan=3,sticky="w",padx=8,pady=5)
         self.summary = tk.StringVar()
-        ttk.Label(right, textvariable=self.summary).pack(anchor="w", pady=(0, 7))
+        self.summary_label = ttk.Label(right, textvariable=self.summary)
+        self.summary_label.pack(anchor="w", pady=(0, 7))
         self.canvas = tk.Canvas(right, background="white", highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
         self.canvas.bind("<Configure>", lambda _: self.draw())
@@ -96,12 +120,27 @@ class App:
         self.window.protocol("WM_DELETE_WINDOW", self.close)
         self.preset()
 
+    def is_dynamic(self):
+        return self.analysis.get() != "静力分析"
+
+    def analysis_changed(self, *_):
+        if self.is_dynamic():
+            self.dynamic_box.pack(fill="x", pady=(0,8), before=self.summary_label)
+        else:
+            self.dynamic_box.pack_forget()
+        self.open_button.configure(text="查看时程曲线与变形播放" if self.is_dynamic() else "打开完整结果页面与下载数据")
+        self.changed()
+
+    def dynamic_config(self):
+        from dynamic_config import configuration
+        return configuration({k:v.get() for k,v in self.dynamic_vars.items()},self.values(),self.key(),self.analysis.get())
+
     def key(self):
-        return "cantilever" if self.mode.get().startswith("悬臂") else "tension"
+        return next(key for key,label in TEMPLATES.items() if label==self.mode.get())
 
     def add_slider(self, parent, key, label, lo, hi, integer=False, logarithmic=False):
         row = ttk.Frame(parent)
-        row.pack(fill="x", pady=4)
+        row.pack(fill="x", pady=2)
         ttk.Label(row, text=label).grid(row=0, column=0, sticky="w")
         var = tk.StringVar()
         self.vars[key] = var
@@ -144,8 +183,9 @@ class App:
 
     def preset(self):
         self.updating = True
-        self.scales["force"][0].configure(from_=-200 if self.key()=="cantilever" else -40000,
-                                          to=200 if self.key()=="cantilever" else 40000)
+        limit=max(200,abs(PRESETS[self.key()]["force"])*4)
+        self.scales["force"][0].configure(from_=-limit,to=limit)
+        self.boundary_note.set(DESCRIPTIONS[self.key()]+" 节点力按边长分配。")
         for key, value in PRESETS[self.key()].items():
             self.vars[key].set(str(value))
         self.updating = False
@@ -158,6 +198,8 @@ class App:
         self.open_button.configure(state="disabled")
         try:
             p, nodes, elements, _, _ = geometry(self.values(), self.key())
+            if self.is_dynamic():
+                self.dynamic_config()
             self.summary.set(f"输入模型  /  {p['nx']} × {p['ny']} 单元  ·  {len(nodes)} 节点  ·  {len(elements)} 单元")
             if self.process is None:
                 self.status.set("参数已更新。点击运行计算，生成对应的结果。")
@@ -210,6 +252,8 @@ class App:
             for n in fixed:
                 x,y = self.screen[n]
                 self.canvas.create_oval(x-4,y-4,x+4,y+4,fill="#2463a4",outline="")
+            if self.is_dynamic() and self.analysis.get()=="动力：自由振动":
+                loads = []
             for n,d,value in loads:
                 x,y = self.screen[n]
                 if value:
@@ -232,7 +276,10 @@ class App:
             text = model_text(self.values(), self.key())
             path = filedialog.asksaveasfilename(defaultextension=".nfem", filetypes=[("有限元模型", "*.nfem")])
             if path:
+                config = self.dynamic_config() if self.is_dynamic() else None
                 Path(path).write_text(text, encoding="utf-8")
+                if config is not None:
+                    Path(path).with_suffix(".dynamic.cfg").write_text(config,encoding="utf-8")
                 self.status.set("模型文件已保存。")
         except (ValueError,OSError) as error:
             messagebox.showerror("无法保存", str(error))
@@ -242,6 +289,7 @@ class App:
             return
         try:
             text = model_text(self.values(), self.key())
+            config = self.dynamic_config() if self.is_dynamic() else None
             candidates = [ROOT/"build"/"NonlinearFEM.exe",ROOT/"build"/"Debug"/"NonlinearFEM.exe",
                           ROOT/"build"/"Release"/"NonlinearFEM.exe",ROOT/"build"/"NonlinearFEM"]
             solver = next((p for p in candidates if p.is_file()), None)
@@ -252,8 +300,15 @@ class App:
             model = directory/"model.nfem"
             model.write_text(text, encoding="utf-8")
             self.active_output = directory/"solution"
+            command = [str(solver),str(model),str(self.active_output)]
+            if config is not None:
+                config_path = directory/"dynamic.cfg"
+                config_path.write_text(config,encoding="utf-8")
+                command = [str(solver),"--dynamic",str(model),str(config_path),str(self.active_output)]
+            self.running_analysis = self.analysis.get()
+            self.running_config = config
             self.log = tempfile.TemporaryFile(mode="w+b")
-            self.process = subprocess.Popen([str(solver),str(model),str(self.active_output)],
+            self.process = subprocess.Popen(command,
                 stdout=self.log,stderr=subprocess.STDOUT,
                 creationflags=subprocess.CREATE_NO_WINDOW if sys.platform=="win32" else 0)
             self.cancelled = False
@@ -288,7 +343,22 @@ class App:
         else:
             self.last_output = self.active_output
             try:
-                same = self.values()==self.running_values and self.key()==self.running_mode
+                same = self.values()==self.running_values and self.key()==self.running_mode and self.analysis.get()==self.running_analysis
+                if self.running_config is not None:
+                    same = same and self.dynamic_config()==self.running_config
+                    from dynamics import load_results
+                    nodes, elements, history, frames = load_results(self.last_output)
+                    self.last_dynamic = True
+                    if same:
+                        self.result = frames[-1]
+                        self.summary.set(f"动力计算完成 / {len(history)} 帧 · t={history[-1]['time']:.6g} · 此处显示最终状态")
+                        self.draw()
+                    self.status.set("动力计算完成，点击下方按钮查看时程与播放。" if same else "旧参数动力计算完成；当前输入已改变，请重新运行。")
+                    self.open_button.configure(state="normal", text="查看上次动力时程与变形播放")
+                    if same:
+                        self.open_result()
+                    return
+                self.last_dynamic = False
                 if same:
                     with (self.last_output/"nodes.csv").open(newline="",encoding="utf-8") as stream:
                         rows = list(csv.DictReader(stream))
@@ -309,7 +379,12 @@ class App:
             self.process.terminate()
 
     def open_result(self):
-        if self.last_output:
+        if self.last_output and getattr(self,"last_dynamic",False):
+            from dynamics import Viewer
+            child = tk.Toplevel(self.window)
+            viewer = Viewer(child)
+            viewer.load(self.last_output)
+        elif self.last_output:
             webbrowser.open((self.last_output/"results.html").as_uri())
 
     def close(self):

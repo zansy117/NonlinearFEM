@@ -8,6 +8,32 @@ PRESETS = {
                        poisson=0.3, thickness=0.2, force=-50.0),
 }
 
+PRESETS.update({
+    "clamped_axial": dict(length=2.,height=1.,nx=8,ny=4,young=100000.,poisson=.3,thickness=.2,force=100.),
+    "shear": dict(length=1.,height=1.,nx=4,ny=4,young=100000.,poisson=.3,thickness=.2,force=100.),
+    "simply_supported": dict(length=4.,height=1.,nx=8,ny=2,young=100000.,poisson=.3,thickness=.2,force=-50.),
+})
+TEMPLATES = {
+    "cantilever": "悬臂板：左端固定，右端竖向力",
+    "tension": "拉伸板：左边水平约束，右端水平力",
+    "clamped_axial": "固定端轴向板：左端全固定，右端水平力",
+    "shear": "剪切板：底边全固定，顶边水平力",
+    "simply_supported": "简支梁：底角支承，顶边竖向均布力",
+}
+DESCRIPTIONS = {
+    "cantilever": "左边全固定，右边均布竖向力；正值向上，负值向下。",
+    "tension": "左边 ux=0，左下角 uy=0；右边水平力。允许竖向收缩；负力表示压缩。",
+    "clamped_axial": "左边 ux=uy=0，右边水平力。固定端限制横向收缩；负力表示压缩。",
+    "shear": "底边 ux=uy=0，顶边水平力；正值向右。不是周期或解析纯剪切边界。",
+    "simply_supported": "左下角 ux=uy=0，右下角 uy=0；顶部竖向均布力。支点附近有局部效应。",
+}
+
+def observation_node(p, mode):
+    if mode=="simply_supported":return (p['ny']//2)*(p['nx']+1)+p['nx']//2
+    if mode=="shear":return p['ny']*(p['nx']+1)+p['nx']//2
+    return (p['ny']//2)*(p['nx']+1)+p['nx']
+
+
 
 def geometry(values, mode):
     if mode not in PRESETS:
@@ -35,14 +61,23 @@ def geometry(values, mode):
             a = j * (nx + 1) + i
             elements.append((a, a + 1, a + nx + 2, a + nx + 1))
     constraints, loads = [], []
-    for j in range(ny + 1):
-        left = j * (nx + 1)
-        constraints.append((left, 0, 0.0))
-        if mode == "cantilever" or j == 0:
-            constraints.append((left, 1, 0.0))
-        weight = 0.5 if j in (0, ny) else 1.0
-        loads.append((left + nx, 0 if mode == "tension" else 1,
-                      p["force"] * weight / ny))
+    if mode in ("cantilever", "tension", "clamped_axial"):
+        for j in range(ny + 1):
+            left=j*(nx+1)
+            constraints.append((left,0,0.0))
+            if mode!="tension" or j==0:constraints.append((left,1,0.0))
+            weight=.5 if j in (0,ny) else 1.
+            loads.append((left+nx,1 if mode=="cantilever" else 0,p['force']*weight/ny))
+    elif mode=="shear":
+        for i in range(nx+1):
+            constraints.extend(((i,0,0.0),(i,1,0.0)))
+            weight=.5 if i in (0,nx) else 1.
+            loads.append((ny*(nx+1)+i,0,p['force']*weight/nx))
+    else:
+        constraints=[(0,0,0.0),(0,1,0.0),(nx,1,0.0)]
+        for i in range(nx+1):
+            weight=.5 if i in (0,nx) else 1.
+            loads.append((ny*(nx+1)+i,1,p['force']*weight/nx))
     return p, nodes, elements, constraints, loads
 
 

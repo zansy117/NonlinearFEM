@@ -293,4 +293,42 @@ namespace NonlinearFEM {
         } 
         return mass;
     }
+
+    [[nodiscard]] 
+    double computeQ4StrainEnergy (
+        const Q4NodalValues& referenceCoordinates,
+        const Q4NodalValues& nodalDisplacements,
+        const MaterialParameters& material,
+        double thickness 
+    ) {
+        if (!std::isfinite(thickness) || thickness <= 0.0) {
+            throw std::invalid_argument(
+                "Thickness must be finite and positive."
+            );
+        }
+
+        double energy = 0.0;
+
+        constexpr double gauss = 0.57735026918962576451;
+
+        const std::array<double , 2> gausspoints = {-gauss,gauss};
+
+        for(std::size_t i = 0;i < 2;++i) {
+            for(std::size_t j=0;j < 2;++j) {
+                const double xi =gausspoints[i] ,eta = gausspoints[j];
+
+                Q4GaussPointState state = computeQ4GaussPointState(xi,eta,referenceCoordinates,nodalDisplacements,material);
+
+                energy += state.detJ * thickness * (state.stress.sxx * state.strain.exx + state.stress.syy * state.strain.eyy + state.stress.sxy * state.strain.exy) / 2;
+
+            }
+        } 
+        if (!std::isfinite(energy) || energy < 0.0) {
+            throw std::invalid_argument(
+                "Energy must be finite and positive."
+            );
+        }
+
+        return energy;
+    }
 }

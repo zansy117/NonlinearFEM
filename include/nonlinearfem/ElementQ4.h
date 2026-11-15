@@ -41,4 +41,12 @@ namespace NonlinearFEM {
         double referenceDensity, //参考密度
         double thickness = 1.0
     );
+
+    [[nodiscard]] 
+    double computeQ4StrainEnergy (
+        const Q4NodalValues& referenceCoordinates,
+        const Q4NodalValues& nodalDisplacements,
+        const MaterialParameters& material,
+        double thickness = 1.0
+    );
 }

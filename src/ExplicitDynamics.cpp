@@ -1,5 +1,6 @@
 #include "nonlinearfem/ExplicitDynamics.h"
 
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <utility>
@@ -195,5 +196,86 @@ namespace NonlinearFEM {
         validateFiniteVector(next.acceleration, "New acceleration");
 
         state = std::move(next);
+    }
+    [[nodiscard]]
+    double estimateStableTimeStep(
+        const std::vector<std::vector<double>>& stiffness,
+        const DynamicVector& mass,
+        const std::vector<bool>& constrained,
+        double safetyFactor
+    ) {
+        const std::size_t N = constrained.size();
+
+        if (N == 0 || mass.size() != N || stiffness.size() != N) {
+            throw std::invalid_argument("Inconsistent or empty time-step system dimensions.");
+        }
+        if (!std::isfinite(safetyFactor) || safetyFactor <= 0.0 || safetyFactor >= 1.0) {
+            throw std::invalid_argument("Safety factor must be finite and in (0, 1).");
+        }
+        bool hasFreeDof = false;
+        for (std::size_t i = 0; i < N; ++i) {
+            if (stiffness[i].size() != N) {
+                throw std::invalid_argument("Stiffness matrix must be square.");
+            }
+            if (!std::isfinite(mass[i]) || mass[i] < 0.0 || (!constrained[i] && mass[i] == 0.0)) {
+                throw std::invalid_argument("Mass must be finite and nonnegative; free DOFs require positive mass.");
+            }
+            if (!constrained[i]) hasFreeDof = true;
+            for (double value : stiffness[i]) {
+                if (!std::isfinite(value)) {
+                    throw std::invalid_argument("Stiffness entries must be finite.");
+                }
+            }
+        }
+        if (!hasFreeDof) {
+            throw std::invalid_argument("At least one free DOF is required.");
+        }
+        // Compare normalized entries to avoid overflow in the symmetry check.
+        for (std::size_t i = 0; i < N; ++i) {
+            for (std::size_t j = i + 1; j < N; ++j) {
+                const double scale = std::max(1.0, std::max(std::abs(stiffness[i][j]), std::abs(stiffness[j][i])));
+                if (std::abs(stiffness[i][j] / scale - stiffness[j][i] / scale) > 1.0e-12) {
+                    throw std::invalid_argument("Stiffness matrix must be symmetric.");
+                }
+            }
+        }
+
+        double answer = 0.0;
+        for(size_t i = 0;i < N;++i) {
+            if(constrained[i]) continue;
+
+            double temp = 0.0;
+
+            for(size_t j = 0;j < N;++j) {
+                if(constrained[j]) continue;
+
+                const double denominator = std::sqrt(mass[i]) * std::sqrt(mass[j]);
+                if (!std::isfinite(denominator) || denominator <= 0.0) {
+                    throw std::overflow_error("Invalid mass normalization denominator.");
+                }
+                double res = stiffness[i][j] / denominator;
+                if (!std::isfinite(res)) {
+                    throw std::overflow_error("Non-finite mass-normalized stiffness.");
+                }
+
+                temp += std::abs(res);
+                if (!std::isfinite(temp)) {
+                    throw std::overflow_error("Stiffness row sum overflow.");
+                }
+            }
+
+            answer = std::max(answer,temp);
+        }
+        
+        if (!std::isfinite(answer) || answer <= 0.0) {
+            throw std::invalid_argument("Eigenvalue bound must be finite and positive.");
+        }
+
+        double dt = safetyFactor * 2 / std::sqrt(answer);
+        if (!std::isfinite(dt) || dt <= 0.0) {
+            throw std::overflow_error("Estimated time step must be finite and positive.");
+        }
+
+        return dt;
     }
 } 

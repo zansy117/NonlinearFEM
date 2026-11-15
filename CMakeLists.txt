@@ -19,6 +19,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(NonlinearFEM
     src/main.cpp
+    src/DynamicRunner.cpp
+    src/DynamicAnalysis.cpp
+    src/DynamicOutput.cpp
+    src/ExplicitDynamics.cpp
     src/ModelIO.cpp
     src/Solver.cpp
     src/BoundaryConditions.cpp
@@ -239,8 +243,80 @@ add_executable(test_explicit_dynamics
     src/ExplicitDynamics.cpp
 )
 
+add_executable(test_q4_explicit
+    tests/test_q4_explicit.cpp
+    src/ExplicitDynamics.cpp
+    src/Assembly.cpp
+    src/ElementQ4.cpp
+    src/Kinematics2D.cpp
+    src/Material.cpp
+)
+
+add_executable(test_q4_energy
+    tests/test_q4_energy.cpp
+    src/ExplicitDynamics.cpp
+    src/Assembly.cpp
+    src/ElementQ4.cpp
+    src/Kinematics2D.cpp
+    src/Material.cpp
+)
+
+add_executable(test_global_energy
+    tests/test_global_energy.cpp
+    src/Assembly.cpp
+    src/ElementQ4.cpp
+    src/Kinematics2D.cpp
+    src/Material.cpp
+)
+
+add_executable(test_multi_q4_explicit
+    tests/test_multi_q4_explicit.cpp
+    src/ExplicitDynamics.cpp
+    src/Assembly.cpp
+    src/ElementQ4.cpp
+    src/Kinematics2D.cpp
+    src/Material.cpp
+)
+
+add_executable(test_stable_timestep
+    tests/test_stable_timestep.cpp
+    src/ExplicitDynamics.cpp
+    src/Assembly.cpp
+    src/ElementQ4.cpp
+    src/Kinematics2D.cpp
+    src/Material.cpp
+)
+
+add_executable(test_dynamic_analysis
+    tests/test_dynamic_analysis.cpp
+    src/DynamicAnalysis.cpp
+    src/ExplicitDynamics.cpp
+    src/Assembly.cpp
+    src/ElementQ4.cpp
+    src/Kinematics2D.cpp
+    src/Material.cpp
+)
+
+add_executable(dynamic_demo
+    examples/dynamic_demo.cpp
+    src/DynamicOutput.cpp
+    src/DynamicAnalysis.cpp
+    src/ExplicitDynamics.cpp
+    src/Assembly.cpp
+    src/ElementQ4.cpp
+    src/Kinematics2D.cpp
+    src/Material.cpp
+)
+
 set(NONLINEARFEM_TARGETS
     NonlinearFEM
+    dynamic_demo
+    test_dynamic_analysis
+    test_stable_timestep
+    test_multi_q4_explicit
+    test_global_energy
+    test_q4_energy
+    test_q4_explicit
     test_explicit_dynamics
     test_lumped_mass
     test_model_io
@@ -316,4 +392,12 @@ if(BUILD_TESTING)
         add_test(NAME test_gui_model
             COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_gui_model.py" "$<TARGET_FILE:NonlinearFEM>")
     endif()
+endif()
+if(BUILD_TESTING AND Python3_Interpreter_FOUND)
+    add_test(NAME test_dynamic_output
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_dynamic_output.py" "$<TARGET_FILE:dynamic_demo>")
+endif()
+if(BUILD_TESTING AND Python3_Interpreter_FOUND)
+    add_test(NAME test_unified_analysis
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_unified_analysis.py" "$<TARGET_FILE:NonlinearFEM>")
 endif()

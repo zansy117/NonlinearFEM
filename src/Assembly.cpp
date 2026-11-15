@@ -270,4 +270,44 @@ namespace NonlinearFEM {
         }
         return mass;
     }
+
+    double assembleGlobalEnergy (
+        const Q4Mesh& mesh,
+        const GlobalDisplacement& displacement,
+        const MaterialParameters& material,
+        double thickness 
+    ) {
+        validateQ4Mesh(mesh, displacement, thickness);
+
+        const size_t N = mesh.elements.size();
+
+        double energy = 0.0;
+
+        for(std::size_t i = 0;i < N;++i) {
+            Q4NodalValues elementCoordinates{};
+            Q4NodalValues elementDisplacements{};
+
+            Q4ElementConnectivity element = mesh.elements[i];
+
+
+            for(std::size_t j = 0 ;j < kQ4NodeCount ;++j) {
+                const size_t id = element[j];
+
+                elementCoordinates[j] = mesh.nodes[id];
+
+                elementDisplacements[j][0] = displacement[2 * id];
+                elementDisplacements[j][1] = displacement[2 * id + 1];
+            }
+
+            energy += computeQ4StrainEnergy(elementCoordinates,elementDisplacements,material,thickness);
+        }
+
+        if (!std::isfinite(energy) || energy < 0.0) {
+            throw std::invalid_argument(
+                "Global strain energy must be finite and nonnegative."
+            );
+        }
+
+        return energy;
+    }
 }

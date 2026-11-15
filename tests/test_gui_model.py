@@ -16,7 +16,16 @@ class Models(unittest.TestCase):
             self.assertEqual(len(nodes),(p["nx"]+1)*(p["ny"]+1))
             self.assertEqual(len(elements),p["nx"]*p["ny"])
             self.assertAlmostEqual(sum(load[2] for load in loads),p["force"])
-            self.assertEqual(len(constraints),2*(p["ny"]+1) if mode=="cantilever" else p["ny"]+2)
+            expected_count = {"cantilever":2*(p["ny"]+1),"tension":p["ny"]+2,
+                              "clamped_axial":2*(p["ny"]+1),"shear":2*(p["nx"]+1),"simply_supported":3}[mode]
+            self.assertEqual(len(constraints),expected_count)
+            self.assertEqual(len(set((n,d) for n,d,v in constraints)),len(constraints))
+            if mode=="shear":
+                self.assertTrue(all(nodes[n][1]==0 for n,d,v in constraints))
+                self.assertTrue(all(nodes[n][1]==p["height"] and d==0 for n,d,v in loads))
+            if mode=="simply_supported":
+                self.assertEqual(set(constraints),{(0,0,0.),(0,1,0.),(p["nx"],1,0.)})
+                self.assertTrue(all(nodes[n][1]==p["height"] and d==1 for n,d,v in loads))
             self.assertEqual(loads[0][2]*2,loads[1][2])
             for a,b,c,d in elements:
                 self.assertGreater((nodes[b][0]-nodes[a][0])*(nodes[d][1]-nodes[a][1]),0)
@@ -42,13 +51,24 @@ class Models(unittest.TestCase):
                 import csv
                 with (folder/"solution"/"nodes.csv").open() as stream:
                     rows=list(csv.DictReader(stream))
-                self.assertAlmostEqual(sum(float(row["reaction_y"]) for row in rows),
-                                       50 if mode=="cantilever" else 0,delta=1e-4)
+                _,_,_,fixed,loads=geometry(p,mode)
+                for direction in (0,1):
+                    component="reaction_x" if direction==0 else "reaction_y"
+                    total=sum(value for node,d,value in loads if d==direction)
+                    self.assertAlmostEqual(sum(float(row[component]) for row in rows),-total,delta=1e-4)
+                for node,d,value in fixed:
+                    self.assertAlmostEqual(float(rows[node]["ux" if d==0 else "uy"]),value,delta=1e-12)
                 if mode=="tension":
                     for row in rows:
                         self.assertAlmostEqual(float(row["ux"]),.2*float(row["x"]),delta=1e-8)
-                else:
+                elif mode=="cantilever":
                     self.assertAlmostEqual(float(rows[17]["uy"]),-.57922940616,delta=1e-7)
+                elif mode=="shear":
+                    self.assertGreater(float(rows[-1]["ux"]),0)
+                elif mode=="clamped_axial":
+                    self.assertGreater(float(rows[-1]["ux"]),0)
+                else:
+                    self.assertLess(float(rows[(int(p["ny"])//2)*(int(p["nx"])+1)+int(p["nx"])//2]["uy"]),0)
 
 
 if __name__=="__main__":

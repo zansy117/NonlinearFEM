@@ -1,11 +1,25 @@
 #include "nonlinearfem/ModelIO.h"
+#include "nonlinearfem/DynamicRunner.h"
 #include <iostream>
 #include <stdexcept>
 
 int main(int argc, char** argv) {
+    if (argc == 5 && std::string(argv[1]) == "--dynamic") {
+        try {
+            if (std::filesystem::exists(argv[4]))
+                throw std::runtime_error("Output directory already exists.");
+            const auto model = NonlinearFEM::readModelFile(argv[2]);
+            NonlinearFEM::runDynamicModel(model, argv[3], argv[4]);
+            std::filesystem::copy_file(argv[2], std::filesystem::path(argv[4])/"model.nfem");
+            return 0;
+        } catch (const std::exception& error) {
+            std::cerr << "Error: " << error.what() << '\n';
+            return 1;
+        }
+    }
     if (argc == 2 && std::string(argv[1]) == "--help") {
         std::cout << "Usage: NonlinearFEM model.nfem output_directory\n"
-                     "Output: results.html, nodes.csv, history.csv\n";
+                     "Output: results.html, nodes.csv, history.csv\nDynamic: NonlinearFEM --dynamic model.nfem dynamic.cfg output_directory\n";
         return 0;
     }
     if (argc != 3) {

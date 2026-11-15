@@ -52,4 +52,11 @@ namespace NonlinearFEM {
         double thickness = 1.0
     );
 
+    double assembleGlobalEnergy (
+        const Q4Mesh& mesh,
+        const GlobalDisplacement& displacement,
+        const MaterialParameters& material,
+        double thickness = 1.0
+    );
+
 }

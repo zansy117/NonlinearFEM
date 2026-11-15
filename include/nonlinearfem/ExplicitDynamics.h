@@ -33,4 +33,12 @@ namespace NonlinearFEM {
         const InternalForceFunction& internalForce,
         const ExternalForceFunction& externalForce
     );
+
+    [[nodiscard]]
+    double estimateStableTimeStep(
+        const std::vector<std::vector<double>>& stiffness,
+        const DynamicVector& mass,
+        const std::vector<bool>& constrained,
+        double safetyFactor = 0.8
+    );
 }
