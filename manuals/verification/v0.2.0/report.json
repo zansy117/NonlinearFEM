@@ -1,0 +1,206 @@
+{
+  "date_local": "2026-11-20T18:32:08.872602+08:00",
+  "timezone": "Asia/Shanghai",
+  "python": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "project": ".",
+  "build": "build-release",
+  "cases": [
+    {
+      "id": "Q4_rotation",
+      "status": "PASS",
+      "max_displacement_abs_error": 0.0,
+      "max_field_scaled_error": 2.220446049250313e-16,
+      "reaction_balance_abs_error": 2.3665827156630354e-30,
+      "peak_reaction": 1.7756138392276073e-14
+    },
+    {
+      "id": "Q4_tension",
+      "status": "PASS",
+      "max_displacement_abs_error": 2.336222881815786e-11,
+      "max_field_scaled_error": 2.9095307192099947e-11,
+      "reaction_balance_abs_error": 1.6822705219965428e-06,
+      "peak_reaction": 5544.000000841135
+    },
+    {
+      "id": "Q4_shear",
+      "status": "PASS",
+      "max_displacement_abs_error": 0.0,
+      "max_field_scaled_error": 1.3877787807814457e-17,
+      "reaction_balance_abs_error": 8.881784197001252e-16,
+      "peak_reaction": 3.901098901098901
+    },
+    {
+      "id": "H8_rotation",
+      "status": "PASS",
+      "max_displacement_abs_error": 0.0,
+      "max_field_scaled_error": 2.241796492031566e-16,
+      "reaction_balance_abs_error": 2.879342304056693e-29,
+      "peak_reaction": 7.206512565749246e-14
+    },
+    {
+      "id": "H8_tension",
+      "status": "PASS",
+      "max_displacement_abs_error": 5.55583357098044e-13,
+      "max_field_scaled_error": 6.843379196652677e-13,
+      "reaction_balance_abs_error": 8.111271654343e-10,
+      "peak_reaction": 28.87500000020281
+    },
+    {
+      "id": "H8_shear",
+      "status": "PASS",
+      "max_displacement_abs_error": 0.0,
+      "max_field_scaled_error": 1.3877787807814457e-17,
+      "reaction_balance_abs_error": 1.7763568394002505e-15,
+      "peak_reaction": 10.456730769230772
+    },
+    {
+      "id": "Q4_patch",
+      "status": "PASS",
+      "executable_sha256": {
+        "test_q4_patch_stress": "fe7586ce411f05da3dc5a0ba15c08c4142925f506ecb8c617642c4c0a2dae62d",
+        "test_q4_patch_distorted": "45df7e86765d0bf5a5a038a09a60ca20dcc34265b98b2994e122e0ce64224d7d"
+      },
+      "executables": [
+        "test_q4_patch_stress",
+        "test_q4_patch_distorted"
+      ]
+    },
+    {
+      "id": "Q4_tangent",
+      "status": "PASS",
+      "executable_sha256": {
+        "test_tangent_stiffness": "96bd633f2f9b7ccf27dcbda4446536982416796b3982e3cf668c64fddddd0f67",
+        "test_tangent_stiffness_distorted": "9fd61010d1edda495b9632be1fed3eafd390df97fd058f58261e906773516109"
+      },
+      "executables": [
+        "test_tangent_stiffness",
+        "test_tangent_stiffness_distorted"
+      ]
+    },
+    {
+      "id": "Q4_cantilever_refinement",
+      "status": "PASS",
+      "executable_sha256": {
+        "test_cantilever_convergence": "bfaebf53892ddd0a941fb9c12bf18ff85321678be0774fbf72cc1f80cc3c97b9"
+      },
+      "executables": [
+        "test_cantilever_convergence"
+      ]
+    },
+    {
+      "id": "oscillator_time_refinement",
+      "status": "PASS",
+      "executable_sha256": {
+        "test_explicit_dynamics": "c81ac076cb9ed622956ecefef23e82df79232746922f4529f3981d798fed69f0"
+      },
+      "executables": [
+        "test_explicit_dynamics"
+      ]
+    }
+  ],
+  "solver_sha256": "e8936bda359155a51313b74278268692016439342b6691eff9d86d43e2d3975e",
+  "source_sha256": {
+    "CMakeLists.txt": "fb116b1aeb4ec4fe1e501f95e47e4eeb34217dd9e928fde34ba75429c299c8e0",
+    "examples/standard/cases.json": "b8577c1349b144d19b64010be2a7c55b1500121debdb77df3b25b969ed0d71e0",
+    "examples/standard/H8_rotation.nfem": "f750fd4f172c78caed04949b37ede5e389714d69f78d4410b718f950fd7e85a0",
+    "examples/standard/H8_shear.nfem": "ebdf87dedb41668ff61a32e5cd4c566387568340a270c39fc961b35dd75dd924",
+    "examples/standard/H8_tension.nfem": "bf1f14f9c681edaecb9f11230f7300a0f1f137c367dea9831bd72a04f3a21947",
+    "examples/standard/Q4_rotation.nfem": "2183c08eddbec27d38bd74454eee1c7a123c0188517d2351bd8f91e3edba0be9",
+    "examples/standard/Q4_shear.nfem": "411a18e2056a9aa8f655b9461bd2b3d2892adac0146478553a665bb9f218ba9e",
+    "examples/standard/Q4_tension.nfem": "df6e1389fc5568341bae6885fef593c27044771d828a205ac5e52382ee2629a2",
+    "gui/app.py": "15f854d7a57a08ce583a7cb9c89e6a836ad95a49e2556d5124dd576c2b89f39e",
+    "gui/boundary_data.py": "f52a154a0fac2fa50cb74007798df33fa2c9f1ba8ae489c950674f7760b93a72",
+    "gui/boundary_editor.py": "aeb31da921b25cd32731a171efa76981382cc1413f7540170e4de7bc7a1bfced",
+    "gui/contour_controls.py": "a9c90255596938342882c7ca91cbd8d389981a65a152bdeee9add8ac92eb5475",
+    "gui/contour_fields.py": "9aa0f432b700a2b812dd490cca89b3ee5adc0be0b50c8c4ca53e208c0153a929",
+    "gui/dynamic_config.py": "6aa8abf8f96c9697b0a8c9339bd7c23140495ca461a751dbd454b6549aa692f4",
+    "gui/dynamics.py": "29621873cacc2d0fc28775f88460fb8e6d72c123934a6afcd9cbade23d3e6173",
+    "gui/h8_app.py": "06f2f5cb2c8531131c27720f782783297750d975ac399aca84db052f006c5c4e",
+    "gui/h8_model.py": "c83f3e301ca7ee0c85b414c26e67430011d7740963f0967e1c29741f7844a479",
+    "gui/model.py": "3bc150fae080a54d9cb244b0a5b749765f770fecbb5fab322033dee372b0bd7e",
+    "gui/package_smoke.py": "6f2d3a0b5b0738c0042ad3393049dde112d25bd0be21254ad42d404505d078c7",
+    "gui/runtime.py": "1cd010e338141ac1f9caf7ac5c7be6e8c695c6d7142286e57521684214b27e38",
+    "gui/viewer3d.py": "7f8f13c76a5de448aa873f65b667e1107ed029e915c27b10db9aee19a79bc2eb",
+    "include/nonlinearfem/Assembly.h": "f17f1a03b3bf7bd1e4695b7d6cce236a4842c2250b8f3e54676f2cca460e447f",
+    "include/nonlinearfem/Assembly_3D.h": "1d2c142c22a0b592312d48eec1e370b04895a7b7f6b903c013c2121cd13f21a1",
+    "include/nonlinearfem/BoundaryConditions.h": "3add1e7df5451aecff22d854d642df9cbc5d9b7b616268d32f7d870f793d5874",
+    "include/nonlinearfem/BoundaryConditions_3D.h": "e401613242deabd1f450c5de782f496310b8c073813e8103e0dfe9efbf648998",
+    "include/nonlinearfem/DynamicAnalysis.h": "e23f725a5673b67fceff9eeb4ee5ea726753f5436005b5e93bdc371e3d42f54c",
+    "include/nonlinearfem/DynamicAnalysis_3D.h": "11acf89b73cd29dc1a9b59c9b4201cbfe0a5feac6ae3ae4c19920d13ae3dd35d",
+    "include/nonlinearfem/DynamicOutput.h": "08c2cd3080a662bf20337be653428741383188f9c00d228d80a97f9e46fbccef",
+    "include/nonlinearfem/DynamicRunner.h": "713e5cc807bc02932e30f24c4e3ab23abf772147ab0c38ed44fe8a289e6aa992",
+    "include/nonlinearfem/ElementH8.h": "e4e51169e550d59fe48cb447b796204ec8e124b2e0ab5133aa394222d446c771",
+    "include/nonlinearfem/ElementQ4.h": "ce00c5f96899959cce7099d3bce1e3f3fb2a58571b6c18ca3e7e6369b7997f4a",
+    "include/nonlinearfem/ExplicitDynamics.h": "bb804ecfce816869188999cefe34a520925d27a2d159c302e3895f2d4f8f7291",
+    "include/nonlinearfem/H8Command.h": "d1a110a35c1c71ddaebfc87d1d04d3f53855c04f8108a1f76cc441c593350470",
+    "include/nonlinearfem/Kinematics2D.h": "1ee19a69c2207f3cadb740a1c0408c174dbef888777f0de3d378434de413a080",
+    "include/nonlinearfem/Kinematics3D.h": "1446cbd2fe761d6642f331b098863295544ef159184c6db1cf153f48a7fe33ad",
+    "include/nonlinearfem/LoadStepping.h": "0831f23977b4f470c46740a5b88c638a4942a6fb844896156ff89cbf1989bccf",
+    "include/nonlinearfem/LoadStepping_3D.h": "3029379aa8b788d8b9aff54602502f542ed9fafa12316819d4f2ca19e6af9939",
+    "include/nonlinearfem/Material.h": "20d7ac97f9ca47ea5b2e8eb2ed7c5b0854b6ef9b2c2da4d118426f8574ae16af",
+    "include/nonlinearfem/ModelIO.h": "859256b63c36bb2786ea0b7123e4179e8b99d5029102314ab5638210c74e3e4e",
+    "include/nonlinearfem/ModelIO_3D.h": "0f92f2b686a1135929e4ff581946194af7f66fa064f14e453a1da955e517a7a4",
+    "include/nonlinearfem/Solver.h": "64675bb5845ceea73152259ca8faa4a6373a3d4e864672d3293d34e5afd6923b",
+    "include/nonlinearfem/Solver_3D.h": "9d51c9e550c8995c2ef1ce185db8e50e6f227d1a9589699cfba7d6f6aa0d0839",
+    "src/Assembly.cpp": "32af9b823fe331d2dd69c56688ca6f586ee28cb1ff19b20168a933a0d49ac8df",
+    "src/Assembly_3D.cpp": "222e4103c5b0ddca990b3eebfaec71bf8a96390b50debe6d87f513f3530e63a9",
+    "src/BoundaryConditions.cpp": "dc942899c5d8f8697fcc6afaa7e38cf117d01d10276a95f60e21ef126349cf17",
+    "src/BoundaryConditions_3D.cpp": "9f4b5b0c71872dffa8d88ed290ef647f34b1617b61b183afe08244ec76319e68",
+    "src/DynamicAnalysis.cpp": "2e7f4b948c261b3d51e341c5c0472b133dc57ce00faff1da6fe8d86af8692869",
+    "src/DynamicAnalysis_3D.cpp": "6ed8dc0f1d7c250b2c1bf873d34444ca347600ba6f24228cb47c5998a6939338",
+    "src/DynamicOutput.cpp": "ad45afef0b9cd73f2910bb42404d905e54b446e38a82960bf92b835204842666",
+    "src/DynamicRunner.cpp": "dad3ed25ae8e3f79d6d75f35b615a2e0f085199ab7a6eb90d51137f1ef37b690",
+    "src/DynamicRunner_3D.cpp": "2a0a90c562976c32c30f89d945ffba482687427fb9fa3b5c0a52652994334f91",
+    "src/ElementH8.cpp": "b4e337ce9d38d30190301e100171894ec002ada32b68632f408c88d52b5516e8",
+    "src/ElementQ4.cpp": "a361570b762d40357f9040d4bf09a592969438248b19ef470766a632a775761e",
+    "src/ExplicitDynamics.cpp": "9f7aacf91a5be07041fd7ea09c9d2689459eb33c022cbabb081f29f664ebeda2",
+    "src/H8Command.cpp": "d786ba74c90b7cbcc70b84432edeb64c0b5d9cb1ee5afd753451c676d0a4f316",
+    "src/Kinematics2D.cpp": "b28d21fbb1965c2d77eaf036ba0da5b06daaf00bfd5b7e35e9051bd4604e5c09",
+    "src/Kinematics3D.cpp": "a1b2d7dfbbf4e537d180fa69498c1c2c9d722b027eac508932e8a5b29c5269f9",
+    "src/LoadStepping.cpp": "ffcabe7dd962d9a64c17d417db72b7878df880766adda62952df62f206e29322",
+    "src/LoadStepping_3D.cpp": "05136253df679a8f60bfea9889fd39537f6f3586b4a56f382d8a647140df2e11",
+    "src/main.cpp": "92757e88f760b139991dfd68722124b3140ae18ff8c87d2d88e3804b301643cb",
+    "src/Material.cpp": "b4ceb1258f60990b6e4644c74f79a283963dc48a8b6374d2613cd56fa8c51604",
+    "src/ModelIO.cpp": "4be869832965d972298773c357278ee5edde892ebd2530b5f991bc16a42f6466",
+    "src/ModelIO_3D.cpp": "28130e7419973eebdb4fa134d3ae693f60aed0b7fc74c8397e1a9e61a599865f",
+    "src/Output_3D.cpp": "b0c07fa020c7da84113263a86a7e94631b154f3faf3048e35352dd77b599f708",
+    "src/Solver.cpp": "c53c97d1c67b627f0a3172dd4eba170a022e936a9dff9141f888cd45ab9846f3",
+    "src/Solver_3D.cpp": "b6a53d324ee3a0443c05d90861e6d7f4beef369e25e76ec89fa52afe3bc3df29",
+    "tests/test_assembly.cpp": "04f5665645e85f5685a069c69c381d672c4198bf270e68f4a021db641ce7b50d",
+    "tests/test_boundary.cpp": "826b712cdf6dd5baba01e6b64b347efdaade1810951a662e6b5546deaa5aef03",
+    "tests/test_boundary_input.py": "3382f74671a023b76922c1baaf7fe2fd1797a6e0bf0057b6c29dd92d8c8810d2",
+    "tests/test_cantilever_convergence.cpp": "e70e9cb89b49b5eca9c34859d8e35e4b890c2d19a67e88ca127bcdda7175f61f",
+    "tests/test_contour_fields.py": "59380f9420ab0332b5218fff0ea2dafdfe8b1d76ee90f54118a8c47d288f6b9d",
+    "tests/test_dynamic_analysis.cpp": "25e3c25d386f38897c9cf585ab838b63f33bff0af6911144fb8ca081bed2665c",
+    "tests/test_dynamic_output.py": "833cd5c313462f4827d9ca969a3e4d2b5423a9d6a4dc153e9482f0d61cab1957",
+    "tests/test_explicit_dynamics.cpp": "a2b2bd4927ecaa3e5c5b7002e4a2fdacb5c3917f9fd7731674133b57be976834",
+    "tests/test_global_assembly_verification.cpp": "58bdcd946a9ba034d8322731f0c1301c27c4d109f482fcee1aa0e8eba16189cb",
+    "tests/test_global_energy.cpp": "b026ce3fe77c65228a09429c4569bf1bb6e4909e715b6e04e4e0ec7f9510222b",
+    "tests/test_Gstrain.cpp": "9d0fa94f80ebab5219df41af8bc0d14998534a7fd894daf70a0a243052a320bc",
+    "tests/test_gui_model.py": "9381f68caa5682a0f76e4d9976c5a52df44527999e582d6aa036122106d62d70",
+    "tests/test_kinematics.cpp": "123bbb642da60a146d64a76f565fef893eeef044713abfabecb0b597a8dcae33",
+    "tests/test_load_stepping.cpp": "c8ac3953659fd8831b9e529df7f9c050bc0b47896bc84752252f0eb8a1bf2dcb",
+    "tests/test_load_stepping_cutback.cpp": "0a2f290eb1ffdff762629149674d39887f8789d2e80107e3669f3088062cb3ad",
+    "tests/test_load_stepping_displacement.cpp": "a2d0013374fa51c1dc14d6e0aca41f772da7e7bc02a7ff1f486b46e6a44740fd",
+    "tests/test_lumped_mass.cpp": "9f0e412977ad04d9a3d6f3593fc4c8177019d8b97b929d9075536c9a0768ec58",
+    "tests/test_material.cpp": "a2d836bc4e4b418d88428a478162c4fe6f4e49bbc3ce05ef263fe6b694524845",
+    "tests/test_model_io.cpp": "97c5a0f581babcfd93e6e036c58e2f539dec2ac8876fabdb23bffe9e7e72d6ea",
+    "tests/test_multi_q4_explicit.cpp": "2ac988eabbfd9d4ae0b06eddecdf75e0e0209bfc633d2223596a615a692e1bf5",
+    "tests/test_q4.cpp": "4ba96b302ff5c4085dacfc7f0565d6c62ba03663c9d663eb73444b80a7fc45cb",
+    "tests/test_q4_energy.cpp": "f284910200cbf2b2f114775b1a4c3c3025149542e2d1443d22da688dd6c59304",
+    "tests/test_q4_explicit.cpp": "5b62a36eadc44f446d8b715b5ac238a3ed5f1fc241ceb4e818b6e7285a86be79",
+    "tests/test_q4_patch_distorted.cpp": "0f875e269871c03fc7e6c931383b13c02a0930410cf212654308bb3a7489800b",
+    "tests/test_q4_patch_multi.cpp": "8d47321d58d0a51b54949ccb123e09eed5a5a9145b732bf25ef3d4938b8063fa",
+    "tests/test_q4_patch_stress.cpp": "401fb1ebf0282dbb8b1daa92ad78ec4e2639096e64a90b9d07dc1b94682b5f87",
+    "tests/test_solver.cpp": "ef4cbe22e50ca9edec5bfff35e6bdeef95949dd16028ede57d1153e62ae549c6",
+    "tests/test_solver_2x2.cpp": "e0ba7e97d49b7ec1c5223c734a11d5bfbc2cd45879c0f11ce50ba55cfab7a647",
+    "tests/test_stable_timestep.cpp": "967af09e0425c45ea675af2c89325bdd2b8d89a4714259bc546f34294b99abc3",
+    "tests/test_tangent_stiffness.cpp": "961d7d81f0a70858458b14878f8338ad2d23daabf5a2ccf0fc375ef77e7b6d82",
+    "tests/test_tangent_stiffness_distorted.cpp": "76d371cfadd0f3412a6e062b6952b618bbd254af81de9243cef7a2883bc4b028",
+    "tests/test_uniaxial_tension.cpp": "b30a53adaee6feeca5ce52e2d841fd410f1b49780b3f64eb4c803eb999ab5447",
+    "tests/test_unified_analysis.py": "6fccc2ad79ac84370a3e774539afe8af5aee2a90ada60104c7ba8ec46f85802e",
+    "tools/run_standard_cases.py": "6560615deffcb69f7022be66f11ddf1d8106d7ac6e1ec29271bb2c5faaa30cf2"
+  },
+  "passed": true
+}

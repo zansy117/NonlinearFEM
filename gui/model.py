@@ -35,7 +35,7 @@ def observation_node(p, mode):
 
 
 
-def geometry(values, mode):
+def geometry(values, mode, custom=None):
     if mode not in PRESETS:
         raise ValueError("请选择模型类型")
     p = {key: float(values[key]) for key in PRESETS[mode]}
@@ -78,11 +78,13 @@ def geometry(values, mode):
         for i in range(nx+1):
             weight=.5 if i in (0,nx) else 1.
             loads.append((ny*(nx+1)+i,1,p['force']*weight/nx))
+    from boundary_data import boundary_records
+    constraints,loads=boundary_records(nodes,elements,custom,constraints,loads)
     return p, nodes, elements, constraints, loads
 
 
-def model_text(values, mode):
-    p, nodes, elements, constraints, loads = geometry(values, mode)
+def model_text(values, mode, custom=None):
+    p, nodes, elements, constraints, loads = geometry(values, mode, custom)
     lines = ["NFEM 1", f'material {p["young"]:.17g} {p["poisson"]:.17g}',
              f'thickness {p["thickness"]:.17g}', f"nodes {len(nodes)}"]
     for records, next_name in ((nodes, "elements"), (elements, "loads"),

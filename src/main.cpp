@@ -1,9 +1,12 @@
 #include "nonlinearfem/ModelIO.h"
 #include "nonlinearfem/DynamicRunner.h"
+#include "nonlinearfem/H8Command.h"
 #include <iostream>
 #include <stdexcept>
 
 int main(int argc, char** argv) {
+    const int h8Status = NonlinearFEM::runH8Command(argc, argv);
+    if (h8Status >= 0) return h8Status;
     if (argc == 5 && std::string(argv[1]) == "--dynamic") {
         try {
             if (std::filesystem::exists(argv[4]))
@@ -40,6 +43,7 @@ int main(int argc, char** argv) {
             return 2;
         }
         NonlinearFEM::writeResults(model, result, argv[2]);
+        std::filesystem::copy_file(argv[1], std::filesystem::path(argv[2])/"model.nfem");
         std::cout << "Converged: nodes=" << model.mesh.nodes.size()
                   << ", elements=" << model.mesh.elements.size()
                   << ", accepted steps=" << result.history.size()

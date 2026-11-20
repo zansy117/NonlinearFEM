@@ -10,15 +10,28 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from runtime import application_root, VERSION
+from contour_fields import FieldResults,choices,model_info,DISPLACEMENT
+from contour_controls import ContourControls,color
 ROOT = application_root()
 
 
 def load_results(directory):
     directory = Path(directory)
+    if not (directory/'frames.csv').exists():
+        with (directory/'nodes.csv').open(encoding='utf-8',newline='') as stream:rows=list(csv.DictReader(stream))
+        material,elements=model_info(directory)
+        if not rows or not elements:raise ValueError('静力云图需要原模型文件（model.nfem）')
+        if 'z' in rows[0] or any(len(e)!=4 or any(n<0 or n>=len(rows) for n in e) for e in elements):raise ValueError('请选择 Q4 结果；三维结果请使用 H8 查看器')
+        nodes=[(float(r['x']),float(r['y'])) for r in rows];frame=[(float(r['ux']),float(r['uy'])) for r in rows]
+        if not all(math.isfinite(v) for row in nodes+frame for v in row):raise ValueError('结果包含非有限值')
+        history=[dict(time=0,node=0,ux=frame[0][0],uy=frame[0][1],kinetic_energy=0,strain_energy=0,total_energy=0)]
+        return nodes,elements,history,[frame]
     def read(name):
         with (directory / name).open(encoding="utf-8", newline="") as stream:
             return list(csv.DictReader(stream))
-    nodes = [(float(r["x"]), float(r["y"])) for r in read("nodes.csv")]
+    node_rows=read('nodes.csv')
+    if node_rows and 'z' in node_rows[0]:raise ValueError('三维结果请使用 H8 查看器')
+    nodes = [(float(r["x"]), float(r["y"])) for r in node_rows]
     elements = [tuple(int(r[f"n{i}"]) for i in range(4)) for r in read("elements.csv")]
     history = [{k: float(v) for k, v in r.items()} for r in read("history.csv")]
     if not nodes or not history or not elements:
@@ -51,16 +64,17 @@ def load_results(directory):
 class Viewer:
     def __init__(self, window):
         self.window = window
-        window.title("NonlinearFEM · 动力时程与变形播放")
-        window.geometry("1160x760+30+20")
+        window.title("NonlinearFEM · Q4 云图与时程")
+        window.geometry("1160x800+30+20")
         window.minsize(920, 700)
         self.data = None
+        self.contour = None
         self.process = None
         self.playing = False
         self.timer = None
         panel = ttk.Frame(window, padding=18)
         panel.pack(fill="both", expand=True)
-        ttk.Label(panel, text="动力分析 / 时程结果", font=("Microsoft YaHei UI", 19, "bold")).pack(anchor="w")
+        ttk.Label(panel, text="Q4 结果云图 / 时程", font=("Microsoft YaHei UI", 16, "bold")).pack(anchor="w")
         self.description = tk.StringVar(value="Q4 动力分析 · 单位沿用模型 · 可打开统一建模窗口生成的结果")
         ttk.Label(panel, textvariable=self.description).pack(anchor="w", pady=7)
         buttons = ttk.Frame(panel)
@@ -72,6 +86,9 @@ class Viewer:
         ttk.Label(panel, textvariable=self.status, wraplength=1080).pack(anchor="w", pady=8)
         self.mesh = tk.Canvas(panel, background="#f6f9fc", highlightthickness=0, height=230)
         self.mesh.pack(fill="both", expand=True)
+        row=ttk.Frame(panel);row.pack(fill='x');self.field=tk.StringVar(value='位移大小')
+        self.selector=ttk.Combobox(row,textvariable=self.field,state='readonly',width=28,values=('位移大小','ux','uy'));self.selector.pack(side='left');self.selector.bind('<<ComboboxSelected>>',self.draw)
+        self.contour_controls=ContourControls(panel,self.draw,self.export_fields)
         controls = ttk.Frame(panel)
         controls.pack(fill="x", pady=8)
         self.play_button = ttk.Button(controls, text="播放", command=self.toggle, state="disabled")
@@ -88,7 +105,7 @@ class Viewer:
         ttk.Button(controls, text="恢复 1 倍", command=self.reset_scale).pack(side="left", padx=5)
         entry.bind("<Return>", self.draw)
         entry.bind("<FocusOut>", self.draw)
-        ttk.Label(panel, text="灰色虚线为原始网格；蓝色为放大变形。播放按保存帧顺序显示，不代表真实播放速度。").pack(anchor="w")
+        ttk.Label(panel, text="灰色虚线：原始网格；彩色：所选结果的单元平均值。播放按保存帧顺序显示。").pack(anchor="w")
         self.display_note = tk.StringVar(value="当前按实际位移显示（1 倍）。")
         ttk.Label(panel, textvariable=self.display_note, foreground="#965513").pack(anchor="w")
         self.curves = tk.Canvas(panel, background="white", highlightthickness=0, height=240)
@@ -109,10 +126,13 @@ class Viewer:
             data = load_results(path)
             self.stop()
             self.data = data
+            self.contour=FieldResults.from_folder(path,data[0],data[1],data[3])
+            self.selector.configure(values=choices(2) if self.contour else ('位移大小','ux','uy'))
+            self.field.set('位移大小');self.contour_controls.fixed.clear()
             self.factor.set(1)
             self.frame.set(0)
             self.timeline.configure(to=len(data[2])-1)
-            self.play_button.configure(state="normal")
+            self.play_button.configure(state="normal" if len(data[2])>1 else "disabled")
             history = data[2]
             metadata = Path(path)/"analysis.txt"
             if metadata.is_file():
@@ -126,6 +146,9 @@ class Viewer:
             drift_text = f"{drift/abs(e0):.3%}" if e0 else "初始能量为零，不计算相对变化"
             self.summary.set(f"观察节点 {int(history[0]['node'])} · {len(history)} 帧 · 总能量相对初值的最大变化：{drift_text}（受迫运动中不等于积分误差）")
             self.status.set(f"已载入：{path}")
+            if len(history)==1:
+                self.description.set(f'Q4 静力云图 · {len(data[0])} 节点 · {len(data[1])} 单元')
+                self.summary.set('静力最终状态；第二PK应力 / GL应变；工程剪应变 = 2 E_xy。')
             self.draw()
         except (OSError, ValueError, KeyError) as error:
             messagebox.showerror("无法读取结果", str(error))
@@ -143,7 +166,8 @@ class Viewer:
         try:
             self.output = ROOT/"results"/("dynamic_"+datetime.now().strftime("%Y%m%d_%H%M%S_%f"))
             self.log = tempfile.TemporaryFile(mode="w+b")
-            self.process = subprocess.Popen([str(solver), str(self.output)], stdout=self.log, stderr=subprocess.STDOUT,
+            self.output.parent.mkdir(parents=True,exist_ok=True)
+            self.process = subprocess.Popen([str(solver), self.output.name], cwd=self.output.parent, stdout=self.log, stderr=subprocess.STDOUT,
                 creationflags=subprocess.CREATE_NO_WINDOW if sys.platform=="win32" else 0)
             self.run_button.configure(state="disabled")
             self.status.set("正在运行显式自由振动示例…")
@@ -171,6 +195,15 @@ class Viewer:
     def reset_scale(self):
         self.factor.set(1)
         self.draw()
+
+    def export_fields(self):
+        if not self.contour:messagebox.showinfo('导出','结果缺少原模型材料信息。',parent=self.window);return
+        path=filedialog.asksaveasfilename(parent=self.window,defaultextension='.csv',initialfile='q4_element_fields.csv')
+        if path:
+            try:
+                index=min(len(self.data[2])-1,max(0,round(self.frame.get())))
+                self.contour.export(path,index,self.data[2][index]['time'])
+            except (ValueError,OSError,OverflowError) as error:messagebox.showerror('导出失败',str(error),parent=self.window)
 
     def draw(self, *_):
         if not self.data:
@@ -204,12 +237,26 @@ class Viewer:
                 ymin=min(ymin,y,y+factor*uy);ymax=max(ymax,y,y+factor*uy)
         zoom=min((w-90)/max(xmax-xmin,1e-12),(h-60)/max(ymax-ymin,1e-12))
         project=lambda x,y: (45+(x-xmin)*zoom, h-30-(y-ymin)*zoom)
-        for e in elements:
+        try:
+            if self.contour:values=self.contour.values(index,self.field.get())
+            else:
+                field=DISPLACEMENT[self.field.get()]
+                nodal=[math.hypot(*u) if field=='mag' else u['xy'.index(field[-1])] for u in frames[index]]
+                values=[sum(nodal[n] for n in e)/4 for e in elements]
+            low,high=self.contour_controls.bounds(self.field.get(),values)
+        except (ValueError,OverflowError) as error:self.display_note.set(str(error));return
+        centers=[]
+        for i,e in enumerate(elements):
             points=[v for n in e for v in project(nodes[n][0]+factor*frames[index][n][0],nodes[n][1]+factor*frames[index][n][1])]
-            self.mesh.create_polygon(points,fill="#d8eaf5",outline="#236795",width=1.5)
+            self.mesh.create_polygon(points,fill=color(values[i],low,high),outline="#236795",width=1.5)
+            centers.append((sum(points[::2])/4,sum(points[1::2])/4))
             original=[v for n in (*e,e[0]) for v in project(*nodes[n])]
             self.mesh.create_line(original,fill="#8796a3",dash=(3,3))
+        self.contour_controls.draw(self.mesh,values,centers,self.field.get())
+        self.mesh.create_text(10,14,text=self.field.get()+' · 单元平均',anchor='w')
         self.curves.delete("all")
+        if len(history)==1:
+            self.curves.create_text(20,30,text='静力最终状态，无时间曲线。应力为第二PK；GL剪应变采用工程分量。',anchor='w');return
         w,h=max(400,self.curves.winfo_width()),max(220,self.curves.winfo_height())
         self.plot((55,35,w/2-25,h-40),history,[('ux','#26659d'),('uy','#d66b25')],"观察节点位移",history[index]['time'])
         self.plot((w/2+60,35,w-20,h-40),history,[('kinetic_energy','#d66b25'),('strain_energy','#26659d'),('total_energy','#23825e')],"能量 T / U / T+U",history[index]['time'])

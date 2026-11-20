@@ -1,0 +1,20 @@
+====================================
+ Distorted Q4 Tangent Stiffness Test
+====================================
+Step size: 1.0000000000e-04 | Maximum relative error: 1.8689117325e-08
+Step size: 1.0000000000e-05 | Maximum relative error: 1.8629521501e-10
+Step size: 1.0000000000e-06 | Maximum relative error: 3.0409449236e-11
+Step size: 1.0000000000e-07 | Maximum relative error: 2.9493765272e-10
+Step size: 1.0000000000e-08 | Maximum relative error: 3.5378675797e-09
+
+========== Verification ==========
+Elements checked: 4
+DOFs per element: 8
+Best finite difference step: 1.0000000000e-06
+Best relative error: 3.0409449236e-11
+Analytical symmetry error: 1.2120676873e-16
+
+====================================
+TEST PASSED
+====================================
+

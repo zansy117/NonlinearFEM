@@ -1,0 +1,25 @@
+====================================
+ Distorted Q4 Multi-Element Patch Test
+====================================
+Element 0 verified.
+Element 1 verified.
+Element 2 verified.
+Element 3 verified.
+
+========== Verification ==========
+Final load factor: 1.0000000000e+00
+Gauss points checked: 16
+Minimum det(J): 7.2739773195e-02
+Maximum F relative error: 2.1769078914e-16
+Maximum strain relative error: 2.5673907444e-16
+Maximum PK2 stress relative error: 3.6626397120e-14
+Maximum element force relative error: 3.0933893121e-15
+Boundary displacement error: 0.0000000000e+00
+Center displacement error: 6.0248871818e-17
+Center absolute residual: 6.7963835192e-06
+Center relative residual: 3.1617085746e-15
+
+====================================
+TEST PASSED
+====================================
+

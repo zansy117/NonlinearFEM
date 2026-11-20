@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "version": "0.2.0",
+  "actual_zip": true,
+  "unicode_space_path": true,
+  "minimal_path": true,
+  "frozen_gui": true,
+  "frozen_standard_cases": 10
+}

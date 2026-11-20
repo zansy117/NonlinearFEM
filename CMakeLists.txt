@@ -401,3 +401,29 @@ if(BUILD_TESTING AND Python3_Interpreter_FOUND)
     add_test(NAME test_unified_analysis
         COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_unified_analysis.py" "$<TARGET_FILE:NonlinearFEM>")
 endif()
+# H8 IO adapter; original Q4 targets and implementation remain unchanged.
+target_sources(NonlinearFEM PRIVATE
+    src/H8Command.cpp
+    src/ModelIO_3D.cpp
+    src/Output_3D.cpp
+    src/DynamicRunner_3D.cpp
+    src/Kinematics3D.cpp
+    src/ElementH8.cpp
+    src/Assembly_3D.cpp
+    src/BoundaryConditions_3D.cpp
+    src/Solver_3D.cpp
+    src/LoadStepping_3D.cpp
+    src/DynamicAnalysis_3D.cpp
+)
+
+# Verify custom Q4/H8 boundary input and solver handoff.
+if(BUILD_TESTING AND Python3_Interpreter_FOUND)
+    add_test(NAME test_boundary_input
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_boundary_input.py" "$<TARGET_FILE:NonlinearFEM>")
+endif()
+
+# Postprocessing definitions, CSV and solver-output consistency.
+if(BUILD_TESTING AND Python3_Interpreter_FOUND)
+    add_test(NAME test_contour_fields
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_contour_fields.py" "$<TARGET_FILE:NonlinearFEM>")
+endif()

@@ -1,0 +1,36 @@
+====================================
+ Q4 Multi-Element Stress Patch Test
+====================================
+Element 0 verified.
+Element 1 verified.
+Element 2 verified.
+Element 3 verified.
+
+========== Analytical Reference ==========
+F:
+1.0200000000e+00 1.0000000000e-02
+5.0000000000e-03 9.9000000000e-01
+
+Green-Lagrange strain:
+2.0212500000e-02
+-9.9000000000e-03
+1.5150000000e-02
+
+PK2 stress:
+3.9790384615e+09
+-8.8528846154e+08
+1.2236538462e+09
+
+========== Verification ==========
+Gauss points checked: 16
+Maximum F relative error: 1.7347234760e-18
+Maximum strain relative error: 3.4694469520e-17
+Maximum PK2 stress relative error: 7.6753846905e-15
+Maximum element force relative error: 1.7959529257e-15
+Center absolute residual: 1.1920928955e-07
+Center relative residual: 5.8567188969e-17
+
+====================================
+TEST PASSED
+====================================
+

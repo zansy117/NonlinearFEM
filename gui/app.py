@@ -14,6 +14,8 @@ import webbrowser
 from model import PRESETS, TEMPLATES, DESCRIPTIONS, geometry, model_text
 
 from runtime import application_root, VERSION
+from contour_fields import FieldResults,choices
+from contour_controls import ContourControls,color
 ROOT = application_root()
 
 
@@ -24,6 +26,8 @@ class App:
         self.window.geometry("1250x820")
         self.window.minsize(1060, 760)
         self.process = None
+        self.custom = None
+        self.contour = None
         self.result = None
         self.last_output = None
         self.vars, self.scales = {}, {}
@@ -46,6 +50,12 @@ class App:
             values=("静力分析", "动力：自由振动", "动力：渐增加载", "动力：突加载荷"))
         analysis.pack(side="left")
         analysis.bind("<<ComboboxSelected>>", self.analysis_changed)
+        ttk.Button(analysis_row,text="自定义 Q4 边界",command=self.edit_boundary).pack(side="left",padx=8)
+        ttk.Button(analysis_row,text="恢复示例边界",command=self.reset_boundary).pack(side="left")
+        def open_h8():
+            from h8_app import H8App
+            H8App(tk.Toplevel(self.window))
+        ttk.Button(analysis_row, text="三维 H8 工作台", command=open_h8).pack(side="right")
         body = ttk.Frame(container)
         body.pack(fill="both", expand=True)
         left = ttk.Frame(body, width=400)
@@ -107,8 +117,8 @@ class App:
         controls = ttk.Frame(right)
         controls.pack(fill="x")
         self.field = tk.StringVar(value="位移大小")
-        field = ttk.Combobox(controls, textvariable=self.field, state="readonly", width=12,
-                             values=("位移大小", "水平位移 ux", "竖向位移 uy"))
+        field = ttk.Combobox(controls, textvariable=self.field, state="readonly", width=24,
+                             values=choices(2))
         field.pack(side="left")
         field.bind("<<ComboboxSelected>>", lambda _: self.draw())
         ttk.Label(controls, text="  变形放大").pack(side="left")
@@ -116,7 +126,8 @@ class App:
         ttk.Scale(controls, from_=0, to=10, variable=self.factor, command=lambda _: self.draw()).pack(side="left", fill="x", expand=True)
         self.factor_text = tk.StringVar(value="1.0×")
         ttk.Label(controls, textvariable=self.factor_text, width=6).pack(side="left")
-        self.open_button = ttk.Button(right, text="打开完整结果页面与下载数据", command=self.open_result, state="disabled")
+        self.contour_controls=ContourControls(right,self.draw,self.export_fields)
+        self.open_button = ttk.Button(right, text="查看完整云图与导出数据", command=self.open_result, state="disabled")
         self.open_button.pack(fill="x", pady=8)
         self.window.protocol("WM_DELETE_WINDOW", self.close)
         self.preset()
@@ -124,15 +135,35 @@ class App:
     def is_dynamic(self):
         return self.analysis.get() != "静力分析"
 
+    def reset_boundary(self):
+        if self.process:return
+        self.custom=None;self.boundary_note.set(DESCRIPTIONS[self.key()]);self.changed()
+
+    def edit_boundary(self):
+        if self.process:self.status.set('请先停止计算，再编辑边界。');return
+        try:
+            p,nodes,elements,constraints,loads=geometry(self.values(),self.key())
+            from boundary_data import boundary_records,mesh_key
+            if self.custom is not None and self.custom['mesh']!=mesh_key(nodes,elements):
+                if not messagebox.askyesno('网格已改变','旧边界不适用于当前网格。以当前示例边界重新编辑？',parent=self.window):return
+            else:constraints,loads=boundary_records(nodes,elements,self.custom,constraints,loads)
+            from boundary_editor import BoundaryEditor
+            def apply(custom):
+                self.custom=custom;self.changed()
+            BoundaryEditor(self.window,nodes,elements,constraints,loads,apply)
+        except ValueError as error:messagebox.showerror('无法编辑',str(error),parent=self.window)
+
     def analysis_changed(self, *_):
         if self.is_dynamic():
             self.dynamic_box.pack(fill="x", pady=(0,8), before=self.summary_label)
         else:
             self.dynamic_box.pack_forget()
-        self.open_button.configure(text="查看时程曲线与变形播放" if self.is_dynamic() else "打开完整结果页面与下载数据")
+        self.open_button.configure(text="查看云图、时程与变形播放" if self.is_dynamic() else "查看完整云图与导出数据")
         self.changed()
 
     def dynamic_config(self):
+        if any(v!=0 for n,d,v in geometry(self.values(),self.key(),self.custom)[3]):
+            raise ValueError('动力分析仅支持零位移约束，请修改自定义边界。')
         from dynamic_config import configuration
         return configuration({k:v.get() for k,v in self.dynamic_vars.items()},self.values(),self.key(),self.analysis.get())
 
@@ -183,6 +214,7 @@ class App:
         self.changed()
 
     def preset(self):
+        self.custom=None
         self.updating = True
         limit=max(200,abs(PRESETS[self.key()]["force"])*4)
         self.scales["force"][0].configure(from_=-limit,to=limit)
@@ -196,9 +228,12 @@ class App:
         if self.updating:
             return
         self.result = None
+        self.contour = None
+        self.contour_controls.fixed.clear()
         self.open_button.configure(state="disabled")
         try:
-            p, nodes, elements, _, _ = geometry(self.values(), self.key())
+            p, nodes, elements, constraints, loads = geometry(self.values(), self.key(), self.custom)
+            if self.custom is not None:self.boundary_note.set(f'自定义边界：{len(constraints)} 项位移约束、{len(loads)} 项节点力。总力滑块仅作用于示例边界。')
             if self.is_dynamic():
                 self.dynamic_config()
             self.summary.set(f"输入模型  /  {p['nx']} × {p['ny']} 单元  ·  {len(nodes)} 节点  ·  {len(elements)} 单元")
@@ -216,7 +251,7 @@ class App:
         self.canvas.delete("all")
         self.screen = []
         try:
-            p, nodes, elements, constraints, loads = geometry(self.values(), self.key())
+            p, nodes, elements, constraints, loads = geometry(self.values(), self.key(), self.custom)
         except ValueError:
             return
         w, h = max(self.canvas.winfo_width(), 200), max(self.canvas.winfo_height(), 200)
@@ -230,24 +265,24 @@ class App:
         zoom = min((w-100)/max(xmax-xmin,1e-12), (h-100)/max(ymax-ymin,1e-12))
         project = lambda x,y: (50+(x-xmin)*zoom, h-50-(y-ymin)*zoom)
         self.screen = [project(x,y) for x,y in positions]
-        values = []
-        if self.result:
-            for ux,uy in self.result:
-                values.append(ux if self.field.get()=="水平位移 ux" else uy if self.field.get()=="竖向位移 uy" else math.hypot(ux,uy))
-        means = [sum(values[n] for n in e)/4 for e in elements] if values else []
-        low, high = (min(means), max(means)) if means else (0,0)
+        try:
+            if self.result and self.contour is None:self.contour=FieldResults(nodes,elements,[self.result],p['young'],p['poisson'])
+            means=self.contour.values(0,self.field.get()) if self.result else []
+            low,high=self.contour_controls.bounds(self.field.get(),means) if means else (0,0)
+        except (ValueError,OverflowError) as error:self.detail.set(str(error));return
         import colorsys
         for i,e in enumerate(elements):
             points = [v for n in e for v in self.screen[n]]
             fraction = (means[i]-low)/(high-low) if high!=low else .5
-            rgb = colorsys.hsv_to_rgb((1-fraction)*2/3,.65,.90)
-            color = "#%02x%02x%02x" % tuple(int(v*255) for v in rgb)
-            self.canvas.create_polygon(points, fill=color if self.result else "#e7eef5", outline="#607990", width=1)
+            fill=color(means[i],low,high) if self.result else '#e7eef5'
+            self.canvas.create_polygon(points, fill=fill, outline="#607990", width=1)
         if self.result:
             for e in elements:
                 points = [v for n in (*e,e[0]) for v in project(*nodes[n])]
                 self.canvas.create_line(points, fill="#9aa5af", dash=(3,3))
-            self.canvas.create_text(18,20,anchor="w",text=f"{self.field.get()}：单元节点平均值  {low:.4g} → {high:.4g}",fill="#24445d")
+            self.canvas.create_text(18,20,anchor="w",text=f"{self.field.get()} · 单元平均",fill="#24445d")
+            centers=[(sum(self.screen[n][0] for n in e)/4,sum(self.screen[n][1] for n in e)/4) for e in elements]
+            self.contour_controls.draw(self.canvas,means,centers,self.field.get())
         else:
             fixed = set(n for n,d,v in constraints)
             for n in fixed:
@@ -274,7 +309,7 @@ class App:
 
     def save_model(self):
         try:
-            text = model_text(self.values(), self.key())
+            text = model_text(self.values(), self.key(), self.custom)
             path = filedialog.asksaveasfilename(defaultextension=".nfem", filetypes=[("有限元模型", "*.nfem")])
             if path:
                 config = self.dynamic_config() if self.is_dynamic() else None
@@ -285,11 +320,24 @@ class App:
         except (ValueError,OSError) as error:
             messagebox.showerror("无法保存", str(error))
 
+    def export_fields(self):
+        if not self.result or self.contour is None:
+            messagebox.showinfo('应力应变导出','请先完成计算。',parent=self.window);return
+        path=filedialog.asksaveasfilename(parent=self.window,defaultextension='.csv',initialfile='q4_element_fields.csv')
+        if path:
+            try:
+                time=0;frame_id=0
+                if getattr(self,'last_dynamic',False) and self.last_output:
+                    with (self.last_output/'history.csv').open(encoding='utf-8',newline='') as stream:history=list(csv.DictReader(stream))
+                    time=float(history[-1]['time']);frame_id=int(history[-1]['frame'])
+                self.contour.export(path,0,time,frame_id)
+            except (OSError,ValueError,OverflowError) as error:messagebox.showerror('导出失败',str(error),parent=self.window)
+
     def run(self):
         if self.process:
             return
         try:
-            text = model_text(self.values(), self.key())
+            text = model_text(self.values(), self.key(), self.custom)
             config = self.dynamic_config() if self.is_dynamic() else None
             candidates = [ROOT/"build"/"NonlinearFEM.exe",ROOT/"build"/"Debug"/"NonlinearFEM.exe",
                           ROOT/"build"/"Release"/"NonlinearFEM.exe",ROOT/"build"/"NonlinearFEM"]
@@ -301,15 +349,15 @@ class App:
             model = directory/"model.nfem"
             model.write_text(text, encoding="utf-8")
             self.active_output = directory/"solution"
-            command = [str(solver),str(model),str(self.active_output)]
+            command = [str(solver),model.name,self.active_output.name]
             if config is not None:
                 config_path = directory/"dynamic.cfg"
                 config_path.write_text(config,encoding="utf-8")
-                command = [str(solver),"--dynamic",str(model),str(config_path),str(self.active_output)]
+                command = [str(solver),"--dynamic",model.name,config_path.name,self.active_output.name]
             self.running_analysis = self.analysis.get()
             self.running_config = config
             self.log = tempfile.TemporaryFile(mode="w+b")
-            self.process = subprocess.Popen(command,
+            self.process = subprocess.Popen(command,cwd=directory,
                 stdout=self.log,stderr=subprocess.STDOUT,
                 creationflags=subprocess.CREATE_NO_WINDOW if sys.platform=="win32" else 0)
             self.cancelled = False
@@ -319,6 +367,7 @@ class App:
             self.cancel_button.configure(state="normal")
             self.progress.start(15)
             self.running_values, self.running_mode = self.values(), self.key()
+            self.running_model_text = text
             self.status.set("正在计算… 可以停止；调整参数后需要重新计算。")
             self.window.after(100,self.poll)
         except (OSError,ValueError) as error:
@@ -344,7 +393,7 @@ class App:
         else:
             self.last_output = self.active_output
             try:
-                same = self.values()==self.running_values and self.key()==self.running_mode and self.analysis.get()==self.running_analysis
+                same = self.values()==self.running_values and self.key()==self.running_mode and self.analysis.get()==self.running_analysis and model_text(self.values(),self.key(),self.custom)==self.running_model_text
                 if self.running_config is not None:
                     same = same and self.dynamic_config()==self.running_config
                     from dynamics import load_results
@@ -386,7 +435,8 @@ class App:
             viewer = Viewer(child)
             viewer.load(self.last_output)
         elif self.last_output:
-            webbrowser.open((self.last_output/"results.html").as_uri())
+            from dynamics import Viewer
+            child=tk.Toplevel(self.window);viewer=Viewer(child);viewer.load(self.last_output)
 
     def close(self):
         if self.process and self.process.poll() is None:
@@ -399,6 +449,10 @@ class App:
 
 
 if __name__ == "__main__":
+    if len(sys.argv)>1 and sys.argv[1]=='--standard-cases':
+        from run_standard_cases import main
+        sys.argv=[sys.argv[0]]+sys.argv[2:]
+        sys.exit(main(default_project=ROOT))
     if len(sys.argv)==3 and sys.argv[1]=="--self-test":
         from package_smoke import check
         sys.exit(check(sys.argv[2]))

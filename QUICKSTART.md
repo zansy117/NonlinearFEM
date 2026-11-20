@@ -1,38 +1,34 @@
-# NonlinearFEM v0.1.0 Windows 便携版
+# NonlinearFEM v0.2.0 Windows 便携版
 
-这是学习与研究用预发布版，面向 Windows 10/11 x64。无需另行安装 Python、CMake 或编译器。
+第二版便携预发布包，面向 Windows 10/11 x64，支持 Q4 与 H8。日常建模、求解和查看云图无需另装 Python、CMake 或编译器。
 
-1. 将整个 ZIP 解压到可写目录，例如“文档/NonlinearFEM”。不要直接在压缩包中运行，不要只复制单个 EXE。
-2. 双击 `NonlinearFEM-Workbench.exe`。
-3. 选择静力或动力分析，以及所需模型模板。
-4. 首次使用保持默认参数，点击“运行计算”。
-5. 静力结果在主窗口显示；动力结果会打开时程曲线与变形播放窗口。
+1. 完整解压 ZIP 到可写文件夹，保留 `_internal/`、`build/` 和其他目录。
+2. 双击 `NonlinearFEM-Workbench.exe`。Q4 在主窗口，H8 点击右上角“三维 H8 工作台”。
+3. 设置尺寸、网格和材料；可从示例开始，或打开自定义边界窗口选择节点/边/面，逐方向设置约束和载荷。
+4. 选择静力或动力，点击运行。结果放在软件目录 `results/` 下。
+5. 选择位移、第二 PK 应力、GL 应变或 von Mises（第二 PK）云图。蓝到红为数值由小到大；可固定或手动设定色标、查看极值、导出 CSV。默认变形倍率为 1。
 
-模型尺寸、材料、力、密度与时间必须采用一致单位。结果自动保存到软件目录的 `results/` 下，每次计算使用独立目录。
+完整说明见 `manuals/USER.md`，原理见 `manuals/THEORY.md`，标准算例见 `manuals/EXAMPLES.md`。也附有 `CONTOURS.md`、`CUSTOM_BOUNDARIES.md` 和 `H8_WORKBENCH.md`。
 
-## 动力分析
+## 使用范围
 
-- 自由振动：从初始扰动释放，忽略界面中的外载。
-- 渐增加载：载荷从零线性增加至设定值。
-- 突加载荷：从初始时刻持续施加设定载荷。
-- 时间步填 0 可基于初始刚度自动选择较保守的步长；该步长不保证大变形全过程稳定或精度。
-- 变形默认 1 倍。非常小的位移可适度放大；过大倍率会产生显示折叠，不代表实际单元翻转。
+- GUI 仍生成矩形 Q4 和长方体 H8 网格，最多 600 节点；没有任意几何造型、接触、塑性或损伤。
+- 单位必须一致。动力约束仅支持固定零位移；自动时间步仅依据初始状态。
+- 应力为第二 PK，应变为 Green–Lagrange，剪应变采用工程分量。云图为单元平均，尚未平滑。
+- 自定义总力在所选节点间均分，不等于按面积积分的均布牵引。
 
-## 文件说明
+## 运行标准算例
 
-- `NonlinearFEM-Workbench.exe`：统一界面入口。
-- `_internal/`：界面运行环境，请保留。
-- `build/`：C++ 求解器与独立动力示例，请保留。
-- `examples/`：可编辑的文本模型。
-- `README.md`：完整说明；`RELEASE_NOTES.md`：版本范围与限制。
-- `LICENSE`：项目 MIT 许可证；`licenses/`：第三方许可。
+包内附标准输入、六个现有验证程序和内置执行入口。PowerShell 在软件目录执行（输出目录必须尚不存在）：
 
-## 遇到问题
+```powershell
+Start-Process .\NonlinearFEM-Workbench.exe -ArgumentList '--standard-cases --output results/standard_check' -Wait
+```
 
-- 若目录不可写，请将整个文件夹移动到自己的“文档”目录。
-- 本版未进行代码签名，Windows 可能显示安全提示；请核对下载来源与 SHA-256。遇到拦截时保留提示信息，不要关闭系统安全保护。
-- 先用默认小模型测试；极端载荷、过细网格或过小时间步可能耗时较长或不收敛。
-- 发布验证在开发电脑的独立解压目录、精简 PATH 下完成，不等于已经在所有 Windows 环境或干净虚拟机上验证。
-- 问题反馈： https://github.com/zansy117/NonlinearFEM/issues
+完成后查看 `results/standard_check/REPORT.md` 与 `report.json`。这条入口使用内置 Python，不要求另装 Python。源代码开发环境仍可执行 `python tools/run_standard_cases.py --build-dir build`。
 
-项目由作者与 ChatGPT / Codex 协作开发。请勿将已有测试通过理解为工程适用性认证。
+## 包内目录
+
+`_internal` 是图形运行环境；`build` 含求解器、动力示例及标准算例所需验证程序；`manuals` 含三本手册与实测附件；`examples` 含模型。`src`、`include`、`gui`、`tests`、`tools` 和 CMake 配置提供对应源码，便于复现和学习。源码编译仍需要开发工具。
+
+遇到问题先看 `RELEASE_NOTES.md` 和用户手册。包未签名，发布检查不等于所有 Windows 机器上的兼容性认证。AI 辅助开发声明与许可证保留在 README、LICENSE 和第三方许可中。
